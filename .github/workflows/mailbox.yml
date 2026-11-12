@@ -1,0 +1,158 @@
+# The mailbox in the room (visit-box).
+#
+# Letters are GitHub Discussions in the "Mailbox" category. This workflow keeps them in
+#   mail/index.json        - totals and the list of pages, newest first
+#   mail/p<N>.json         - the letters whose discussion number is N*100 ... N*100+99
+# Each run touches only the page of the discussion that changed (plus a quick look at the
+# newest 50), so it stays fast with any number of letters. A manual run ("Run workflow")
+# or the daily run re-checks the newest 1000 (or as many as you type in).
+#
+# To keep a letter out of the mailbox: close it, delete it, or give it the label "hide".
+# Your own first comment on a letter shows up under it as "Sina replied".
+
+name: Mailbox
+
+on:
+  discussion:
+    types: [created, edited, deleted, closed, reopened, category_changed, transferred, labeled, unlabeled]
+  discussion_comment:
+    types: [created, edited, deleted]
+  workflow_dispatch:
+    inputs:
+      scan:
+        description: "How many of the newest letters to re-check"
+        default: "1000"
+  schedule:
+    - cron: "23 4 * * *"
+
+permissions:
+  contents: write
+  discussions: read
+
+concurrency:
+  group: mailbox
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update mail/
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs'), path = require('path');
+            const { owner, repo } = context.repo;
+            const SLUG = 'mailbox', DIR = 'mail', SIZE = 100;
+            const ev = context.eventName, payload = context.payload || {};
+
+            // markdown -> readable plain text
+            const plain = (md = '') => md
+              .replace(/<!--[\s\S]*?-->/g, '')
+              .replace(/```[a-z]*\n?([\s\S]*?)```/gi, '$1')
+              .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+              .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+              .replace(/<[^>]+>/g, '')
+              .replace(/^#{1,6}\s+/gm, '')
+              .replace(/(\*\*|__)(.*?)\1/g, '$2')
+              .replace(/`([^`]*)`/g, '$1')
+              .replace(/\r/g, '')
+              .replace(/\n{3,}/g, '\n\n')
+              .trim();
+            // a letter written with the Mailbox form arrives as "### Your letter ... ### Sign as ..."
+            const sections = (md = '') => {
+              const out = {}; const parts = md.split(/^###\s+(.+)$/m);
+              for (let i = 1; i < parts.length; i += 2) out[parts[i].trim().toLowerCase()] = parts[i + 1].trim();
+              return out;
+            };
+            const none = s => !s || /^_?no response_?$/i.test(s.trim());
+
+            const FIELDS = `number title url createdAt body closed category { slug }
+              author { login avatarUrl url } labels(first: 10) { nodes { name } }
+              comments(first: 10) { totalCount nodes { body author { login } } }`;
+            function toLetter(d) {   // null = not (or no longer) a letter for the mailbox
+              if (!d || d.closed || !d.category || d.category.slug !== SLUG) return null;
+              if ((d.labels?.nodes || []).some(l => /^(hide|hidden|spam)$/i.test(l.name))) return null;
+              const s = sections(d.body), sign = none(s['sign as']) ? '' : plain(s['sign as']).slice(0, 80);
+              const mine = (d.comments?.nodes || []).find(c => c.author && c.author.login.toLowerCase() === owner.toLowerCase());
+              return {
+                n: d.number,
+                title: (/^a letter from\s*$/i.test(d.title.trim()) ? `A letter from ${sign || (d.author ? d.author.login : 'someone')}` : d.title).slice(0, 160),
+                text: plain(s['your letter'] ?? d.body).slice(0, 4000),
+                sign,
+                from: d.author ? d.author.login : 'ghost',
+                avatar: d.author ? d.author.avatarUrl : null,
+                at: d.createdAt,
+                url: d.url,
+                comments: d.comments ? d.comments.totalCount : 0,
+                reply: mine ? plain(mine.body).slice(0, 1500) : '',
+              };
+            }
+
+            fs.mkdirSync(DIR, { recursive: true });
+            const read = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return d; } };
+            const idxFile = path.join(DIR, 'index.json'), index = read(idxFile, null) || { pages: [] };
+            index.pages = (index.pages || []).map(p => [].concat(p)).filter(p => Number.isFinite(p[0]));
+            const pages = new Map(), dirty = new Set();
+            const page = id => { if (!pages.has(id)) pages.set(id, read(path.join(DIR, `p${id}.json`), { page: id, letters: [] })); return pages.get(id); };
+            function put(num, letter) {   // add, update or remove one letter
+              const pg = page(Math.floor(num / SIZE)), i = pg.letters.findIndex(l => l.n === num);
+              if (letter) {
+                if (i >= 0 && JSON.stringify(pg.letters[i]) === JSON.stringify(letter)) return;
+                if (i >= 0) pg.letters[i] = letter; else pg.letters.push(letter);
+              } else if (i >= 0) pg.letters.splice(i, 1); else return;
+              pg.letters.sort((a, b) => b.n - a.n); dirty.add(pg.page);
+            }
+
+            // 1) the discussion this run is about
+            const num = payload.discussion && payload.discussion.number;
+            if (num) {
+              let d = null;
+              try { d = (await github.graphql(`query($o: String!, $r: String!, $n: Int!) { repository(owner: $o, name: $r) { discussion(number: $n) { ${FIELDS} } } }`, { o: owner, r: repo, n: num })).repository.discussion; }
+              catch (e) { core.info(`Discussion #${num} is gone (${e.message.split('\n')[0]})`); }
+              put(num, toLetter(d));
+            }
+
+            // 2) the newest letters: catches runs GitHub skipped while this one was busy; manual/daily runs look further back
+            const { repository: rc } = await github.graphql(`query($o: String!, $r: String!) { repository(owner: $o, name: $r) { discussionCategories(first: 50) { nodes { id slug } } } }`, { o: owner, r: repo });
+            const cat = rc.discussionCategories.nodes.find(c => c.slug === SLUG);
+            if (!cat) core.warning(`No discussion category with the slug "${SLUG}" yet: create a category called "Mailbox".`);
+            const limit = ev === 'workflow_dispatch' ? Math.max(1, Number(payload.inputs && payload.inputs.scan) || 1000) : ev === 'schedule' ? 1000 : 50;
+            let after = null, seen = 0;
+            while (cat && seen < limit) {
+              const { repository: rd } = await github.graphql(
+                `query($o: String!, $r: String!, $c: ID!, $a: String, $f: Int!) { repository(owner: $o, name: $r) {
+                  discussions(first: $f, after: $a, categoryId: $c, orderBy: { field: CREATED_AT, direction: DESC }) { pageInfo { hasNextPage endCursor } nodes { ${FIELDS} } } } }`,
+                { o: owner, r: repo, c: cat.id, a: after, f: Math.min(100, limit - seen) });
+              for (const d of rd.discussions.nodes) put(d.number, toLetter(d));
+              seen += rd.discussions.nodes.length;
+              if (!rd.discussions.pageInfo.hasNextPage) break;
+              after = rd.discussions.pageInfo.endCursor;
+            }
+
+            // 3) write the pages that changed, then the index
+            if (!dirty.size && fs.existsSync(idxFile)) { core.info('Mailbox unchanged'); return; }
+            for (const id of dirty) {
+              const pg = page(id), f = path.join(DIR, `p${id}.json`), k = index.pages.findIndex(p => p[0] === id);
+              if (pg.letters.length) fs.writeFileSync(f, JSON.stringify({ page: id, letters: pg.letters }) + '\n');
+              else if (fs.existsSync(f)) fs.unlinkSync(f);
+              if (pg.letters.length) { if (k >= 0) index.pages[k][1] = pg.letters.length; else index.pages.push([id, pg.letters.length]); }
+              else if (k >= 0) index.pages.splice(k, 1);
+            }
+            index.pages.sort((a, b) => b[0] - a[0]);
+            const newest = index.pages.length ? page(index.pages[0][0]).letters[0] : null;
+            fs.writeFileSync(idxFile, JSON.stringify({ updated: new Date().toISOString(), repo: `${owner}/${repo}`, category: SLUG, size: SIZE,
+              total: index.pages.reduce((s, p) => s + p[1], 0), latest: newest ? newest.n : 0, pages: index.pages }) + '\n');
+            core.info(`Mailbox: ${dirty.size} page(s) updated`);
+
+      - name: Commit mail/
+        run: |
+          git add -A mail
+          if git diff --cached --quiet; then echo "Nothing new in the mailbox"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Mailbox: update letters"
+          git pull --rebase --autostash
+          git push

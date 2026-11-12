@@ -1,0 +1,19 @@
+title: "A letter from "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ✉️ **You're writing a letter to Sina.** It drops into the mailbox inside the room at [cnaebadi.github.io/visit-box](https://cnaebadi.github.io/visit-box/) about a minute after you post it. Letters are public.
+  - type: textarea
+    id: letter
+    attributes:
+      label: Your letter
+      placeholder: "Hi Sina, …"
+    validations:
+      required: true
+  - type: input
+    id: signature
+    attributes:
+      label: Sign as
+      description: Optional. Leave it empty to sign with your GitHub name.
+      placeholder: "a friend from the internet"

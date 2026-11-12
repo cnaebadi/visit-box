@@ -1,0 +1,71 @@
+# Puts three.js (r170) and the fonts into lib/, so the page never needs a CDN or Google Fonts.
+# Runs by itself the first time this file is pushed; you can also run it from the Actions tab.
+
+name: Vendor three.js and fonts
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/vendor.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download into lib/
+        run: |
+          set -euo pipefail
+          W="$GITHUB_WORKSPACE"; P="$RUNNER_TEMP/pk"
+          rm -rf "$W/lib" "$P"; mkdir -p "$W/lib/three/build" "$W/lib/three/examples/jsm" "$W/lib/fonts" "$P"
+          cd "$P"
+          for pkg in three@0.170.0 @fontsource/space-grotesk@5 @fontsource/jetbrains-mono@5 @fontsource/yellowtail@5; do
+            f=$(npm pack "$pkg" --silent | tail -n 1); d="x-${f%.tgz}"; mkdir -p "$d"; tar -xzf "$f" -C "$d"
+          done
+
+          # three.js: the core build + the add-ons the page imports (with everything they import)
+          T=$(ls -d x-three-*/package)
+          cp "$T"/build/three.module.js "$W/lib/three/build/"
+          if [ -f "$T/build/three.core.js" ]; then cp "$T/build/three.core.js" "$W/lib/three/build/"; fi
+          for d in controls postprocessing shaders environments geometries utils; do cp -r "$T/examples/jsm/$d" "$W/lib/three/examples/jsm/"; done
+          cp "$T/LICENSE" "$W/lib/three/LICENSE"
+
+          # fonts: latin woff2 files + one stylesheet
+          css="$W/lib/fonts/fonts.css"; : > "$css"
+          add() {   # family, package folder, file prefix, weights
+            fam="$1"; dir=$(ls -d x-fontsource-"$2"-*/package); pre="$3"; shift 3
+            for w in "$@"; do
+              file="$pre-latin-$w-normal.woff2"
+              cp "$dir/files/$file" "$W/lib/fonts/"
+              printf "@font-face { font-family: '%s'; font-style: normal; font-weight: %s; font-display: swap; src: url(%s) format('woff2'); }\n" "$fam" "$w" "$file" >> "$css"
+            done
+            cp "$dir/LICENSE" "$W/lib/fonts/LICENSE-$pre" 2>/dev/null || true
+          }
+          add "Space Grotesk" space-grotesk space-grotesk 400 500 700
+          add "JetBrains Mono" jetbrains-mono jetbrains-mono 400 700
+          add "Yellowtail" yellowtail yellowtail 400
+
+          # sanity check: every file the page asks for is here
+          cd "$W"
+          for f in lib/three/build/three.module.js lib/three/examples/jsm/controls/OrbitControls.js lib/three/examples/jsm/postprocessing/EffectComposer.js \
+                   lib/three/examples/jsm/postprocessing/RenderPass.js lib/three/examples/jsm/postprocessing/UnrealBloomPass.js lib/three/examples/jsm/postprocessing/ShaderPass.js \
+                   lib/three/examples/jsm/postprocessing/OutputPass.js lib/three/examples/jsm/environments/RoomEnvironment.js lib/three/examples/jsm/geometries/RoundedBoxGeometry.js \
+                   lib/three/examples/jsm/utils/BufferGeometryUtils.js lib/fonts/fonts.css; do
+            [ -s "$f" ] || { echo "missing $f"; exit 1; }
+          done
+          du -sh lib
+
+      - name: Commit lib/
+        run: |
+          git add -A lib
+          if git diff --cached --quiet; then echo "lib/ is already up to date"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Vendor three.js r170 and fonts into lib/"
+          git pull --rebase --autostash
+          git push
