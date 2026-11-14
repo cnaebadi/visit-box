@@ -32,6 +32,7 @@
   #scene { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; outline:none; }
   #fx { position:fixed; inset:0; pointer-events:none; z-index:1; background:radial-gradient(125% 100% at 50% 42%, rgba(0,0,0,0) 56%, rgba(10,6,3,.5) 100%); }
   #grain { position:fixed; inset:-80px; pointer-events:none; z-index:1; opacity:.055; background-size:200px 200px; animation:grain .8s steps(4) infinite; }
+  @media (pointer: coarse) { #grain { opacity:.025; } }   /* the film grain reads as glitter on small, dense screens */
   @keyframes grain { 0%{transform:translate(0,0)} 25%{transform:translate(-30px,18px)} 50%{transform:translate(22px,-26px)} 75%{transform:translate(-16px,-12px)} 100%{transform:translate(0,0)} }
   .ui { position:fixed; z-index:3; }
   body.zen .brand, body.zen #tools, body.zen #dock, body.zen #credit, body.zen #hint { opacity:.28; filter:blur(1.4px); transition:opacity 4s, filter 4s; }
@@ -393,6 +394,8 @@ const ACTIONS = {
   phones: { label: 'Headphones', host: 'put them on', c1: '#9fc4ff' },
   curtains: { label: 'Curtains', host: 'close them', c1: '#d8c9a8' },
   library: { label: 'Library', host: 'GitHub’s best-known repositories', c1: '#c4a46a' },
+  rose: { label: 'Rose under glass', host: 'listen closely', c1: '#ff5a6e' },
+  cabinet: { label: 'Record cabinet', host: 'take a closer look', c1: '#e3b178' },
 };
 const DOCK = ['github', 'telegram', 'gems', 'repos', 'window', 'door', 'mailbox', 'coffee', 'mail', 'lofi'];
 const SITE = (() => {   // on GitHub Pages the owner, repo and address come from the URL itself; elsewhere these defaults
@@ -409,10 +412,11 @@ const isTouch = matchMedia('(pointer: coarse)').matches;
 const lowMem = (navigator.deviceMemory || 8) <= 4;
 const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
 const Q = {
-  dpr: Math.min(window.devicePixelRatio || 1, isTouch ? 1.35 : 1.5),
-  maxDpr: Math.min(window.devicePixelRatio || 1, isTouch ? 1.8 : 2),
-  minDpr: isTouch ? 0.7 : 0.8,
-  msaa: isTouch ? 2 : 4,
+  // phones have 3x screens: render at 2x (never under 1x, which turns every edge jagged); the frame-time watcher trades bloom first, then resolution
+  dpr: Math.min(window.devicePixelRatio || 1, isTouch ? 2 : 1.5),
+  maxDpr: Math.min(window.devicePixelRatio || 1, isTouch ? 2.5 : 2),
+  minDpr: isTouch ? Math.min(1, window.devicePixelRatio || 1) : 0.8,
+  msaa: isTouch && lowMem ? 2 : 4,
   shadow: isTouch || lowMem ? 1024 : 2048,
   screenHz: isTouch ? 6 : 8,
   extraLights: !isTouch,
@@ -1452,6 +1456,7 @@ await tick('SHELVING THE REPOS');
    RIGHT WALL ZONE: record cabinet + turntable, repo shelf, decor shelf, clock
    ===================================================================== */
 const CAB = { x: 1.57, z: ROOM.back + 0.22, w: 0.9, d: 0.42, h: 0.72, leg: 0.12 };
+const ROSE = { g: null, head: null, petal: null, glow: null, t0: -99, active: false };
 const CAB_TOP = CAB.leg + CAB.h;
 {
   const cab = new THREE.Group(); cab.position.set(CAB.x, 0, CAB.z); scene.add(cab);
@@ -1463,16 +1468,85 @@ const CAB_TOP = CAB.leg + CAB.h;
   mk(new THREE.BoxGeometry(T, H - 2 * T, D - T), wal, 0, L + H / 2, T / 2, cab);
   mk(new THREE.BoxGeometry(W - 2 * T, T, D - T), wal, 0, L + H / 2, T / 2, cab);
   for (const [x, z] of [[-W / 2 + 0.05, -D / 2 + 0.05], [W / 2 - 0.05, -D / 2 + 0.05], [-W / 2 + 0.05, D / 2 - 0.05], [W / 2 - 0.05, D / 2 - 0.05]]) mk(new THREE.CylinderGeometry(0.016, 0.011, L, 10), MAT.darkWood, x, L / 2, z, cab);
+  cab.children.forEach(o => { if (o.isMesh) o.userData.id = 'cabinet'; });   // the frame itself: click it for a close look at every shelf
   // vinyl records in the top-left cube
   const sleeveCols = ['#c8501f', '#2c3850', '#e0a14a', '#6f8463', '#a24a2f', '#d8cdb4', '#3a2a50', '#1e1e1e', '#8a9bb0', '#b8613f', '#e6dfd2', '#4a6a8a'];
   const cubW = (W - 3 * T) / 2, cubH = (H - 3 * T) / 2, y1 = L + T + cubH + T + cubH / 2, y0 = L + T + cubH / 2;
-  for (let i = 0; i < 12; i++) { const r = mk(new THREE.BoxGeometry(0.007, 0.3, 0.3), M(sleeveCols[i], { roughness: 0.7 }), -W / 2 + T + 0.03 + i * 0.0125, y1 - cubH / 2 + 0.152, 0.02, cab); r.rotation.z = i > 9 ? -0.3 : 0.02 * Math.sin(i); }
+  // album sleeves: art on both faces (no text), the last two leaning back on the stack, a record half out of the front one
+  const albumArt = (i) => canvasTex(cvs(128, 128, (g, w, h) => {
+    const c = sleeveCols[i], c2 = sleeveCols[(i + 5) % 12], c3 = sleeveCols[(i + 8) % 12];
+    g.fillStyle = c; g.fillRect(0, 0, w, h);
+    const k = i % 5;
+    if (k === 0) { g.fillStyle = c2; g.beginPath(); g.arc(w * 0.5, h * 0.55, w * 0.3, 0, Math.PI * 2); g.fill(); g.fillStyle = c3; g.fillRect(0, h * 0.72, w, h * 0.28); }
+    else if (k === 1) { g.strokeStyle = c2; g.lineWidth = 9; for (let x = -h; x < w; x += 22) { g.beginPath(); g.moveTo(x, h); g.lineTo(x + h, 0); g.stroke(); } }
+    else if (k === 2) { for (let r = 56; r > 4; r -= 10) { g.strokeStyle = r % 20 ? c2 : c3; g.lineWidth = 4; g.beginPath(); g.arc(w / 2, h / 2, r, 0, Math.PI * 2); g.stroke(); } }
+    else if (k === 3) { for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if ((x + y + i) % 3) { g.fillStyle = (x + y) % 2 ? c2 : c3; g.fillRect(12 + x * 27, 12 + y * 27, 22, 22); } }
+    else { g.fillStyle = c2; g.beginPath(); g.moveTo(0, h); g.lineTo(w * 0.5, h * 0.25); g.lineTo(w, h); g.fill(); g.fillStyle = c3; g.beginPath(); g.arc(w * 0.75, h * 0.28, 12, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = 'rgba(255,255,255,0.75)'; g.fillRect(10, 10, 30, 5); g.fillRect(10, 19, 20, 4);   // a little title block, no letters
+  }));
+  const RT = 0.009, RH = 0.3, recY = y1 - cubH / 2, rx0 = -W / 2 + T + 0.012, edgeMat = M('#e9e2d4', { roughness: 0.8 });
+  const sleeve = (i, x, y, a) => {
+    const art = new THREE.MeshStandardMaterial({ map: albumArt(i), roughness: 0.65 }), spine = M(sleeveCols[i], { roughness: 0.7 });
+    const r = mk(new THREE.BoxGeometry(RT, RH, 0.3), [art, art, edgeMat, edgeMat, spine, spine], x, y, 0.02, cab); r.rotation.z = a; return r;
+  };
+  for (let i = 0; i < 10; i++) sleeve(i, rx0 + i * 0.0105, recY + RH / 2, 0);
+  const lean = 0.22, xp = rx0 + 9 * 0.0105 + RT / 2;   // resting on the last upright one: foot slid out, top against it
+  for (let j = 0; j < 2; j++) {
+    const off = j * (RT + 0.002), cx = xp + RH / 2 * Math.sin(lean) + RT / 2 * Math.cos(lean) + off * Math.cos(lean), cy = recY + RH / 2 * Math.cos(lean) + RT / 2 * Math.sin(lean) + off * Math.sin(lean);
+    const r = sleeve(10 + j, cx, cy, lean);
+    if (j === 1) {   // the record itself, half pulled out of the front sleeve
+      const disc = mk(new THREE.CylinderGeometry(0.142, 0.142, 0.0016, 48), M('#0d0d0f', { roughness: 0.28, metalness: 0.2 }), RT / 2 + 0.0012, -0.004, 0.105, r); disc.rotation.z = Math.PI / 2;   // slid half out of the sleeve's open side, towards you
+      for (const sd of [-1, 1]) mk(new THREE.CircleGeometry(0.046, 32), M('#c8501f', { roughness: 0.6 }), 0, sd * 0.0009, 0, disc, false).rotation.x = -Math.PI / 2 * sd;   // the label, both sides
+    }
+  }
   // basket with a folded blanket (top-right)
   mk(rbox(0.36, 0.22, 0.3, 0.03), M('#a88a5c', { map: TEX.jute, normalMap: TEX.juteN, roughness: 1 }), cubW / 2 + T / 2, y1 - cubH / 2 + 0.11, 0.03, cab);
   mk(rbox(0.32, 0.06, 0.26, 0.025), MAT.knit, cubW / 2 + T / 2, y1 - cubH / 2 + 0.24, 0.03, cab);
   // books lying (bottom-left) and storage boxes (bottom-right)
   [['#2d4a63', 0.3], ['#8f3e2e', 0.28], ['#d8cdb4', 0.31], ['#4b5f45', 0.27]].forEach(([c, w], i) => mk(rbox(w, 0.035, 0.22, 0.004), M(c, { roughness: 0.8 }), -cubW / 2 - T / 2, y0 - cubH / 2 + 0.018 + i * 0.036, 0.02, cab).rotation.y = (i % 2 ? 0.05 : -0.04));
   for (const s of [-1, 1]) mk(rbox(0.18, 0.2, 0.3, 0.02), M('#cdbda3', { roughness: 1, normalMap: TEX.weaveN, normalScale: new THREE.Vector2(0.5, 0.5) }), cubW / 2 + T / 2 + s * 0.095, y0 - cubH / 2 + 0.1, 0.03, cab);
+  // a rose under a glass dome, in the free part of the records cube; click it and listen to its heart
+  {
+    const rg = new THREE.Group(); rg.position.set(-0.135, y1 - cubH / 2, 0.03); cab.add(rg); ROSE.g = rg;
+    mk(new THREE.CylinderGeometry(0.074, 0.08, 0.022, 40), MAT.darkWood, 0, 0.011, 0, rg);
+    mk(new THREE.TorusGeometry(0.064, 0.003, 6, 40), MAT.brass, 0, 0.023, 0, rg, false).rotation.x = Math.PI / 2;
+    const stemMat = M('#2f5a2a', { roughness: 0.6 }), petalMat = ROSE.petal = new THREE.MeshStandardMaterial({ color: '#76071a', roughness: 0.42, emissive: new THREE.Color('#5a0410'), emissiveIntensity: 0.25, side: THREE.DoubleSide });
+    mk(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new V3(0, 0.022, 0), new V3(0.004, 0.06, 0.003), new V3(-0.002, 0.1, 0.004), new V3(0.002, 0.135, 0)]), 16, 0.0032, 6, false), stemMat, 0, 0, 0, rg, false);
+    const leaf = new THREE.Shape(); leaf.moveTo(0, 0); leaf.quadraticCurveTo(0.012, 0.012, 0, 0.032); leaf.quadraticCurveTo(-0.012, 0.012, 0, 0);
+    const leafGeo = new THREE.ShapeGeometry(leaf, 6);
+    for (const [y, ry, rz] of [[0.062, 0.6, -0.9], [0.088, 2.6, 0.95]]) { const l = mk(leafGeo, M('#3b6e33', { roughness: 0.55, side: THREE.DoubleSide }), 0.003, y, 0.003, rg, false); l.rotation.set(0.3, ry, rz); }
+    const head = dyn(new THREE.Group()); head.position.set(0.002, 0.137, 0); rg.add(head); ROSE.head = head;
+    // a petal: base at the origin, rising along +y, its outside facing +z; the sides curl in round the bud, the top lip rolls outwards
+    const petalGeo = (W, H, cup, flare) => {
+      const g = new THREE.PlaneGeometry(1, 1, 8, 10), pp = g.attributes.position;
+      for (let i = 0; i < pp.count; i++) {
+        const u = pp.getX(i) * 2, v = pp.getY(i) + 0.5, w = W * Math.pow(Math.sin(Math.PI * (0.12 + 0.88 * v) * 0.62 + 0.25), 1.2) * (0.35 + 0.65 * Math.sqrt(v)) * (1 - 0.45 * Math.pow(v, 4));   // rounded top
+        pp.setXYZ(i, u * w / 2, H * v, -cup * u * u * w + flare * Math.pow(v, 3) - 0.004 * Math.sin(Math.PI * v));
+      }
+      g.computeVertexNormals(); return g;
+    };
+    mk(new THREE.SphereGeometry(0.0072, 14, 10), petalMat, 0, 0.018, 0, head, false).scale.set(1, 2.0, 1);   // the tight heart of the bud
+    [[3, 0.003, 0.017, 0.027, 0.6, 0.0, 0.0, 0.006], [4, 0.006, 0.021, 0.028, 0.58, 0.001, 0.06, 0.003], [5, 0.009, 0.025, 0.029, 0.55, 0.002, 0.14, 0.0], [6, 0.012, 0.028, 0.028, 0.5, 0.004, 0.27, -0.003]]
+      .forEach(([n, r, w, h, cup, flare, tilt, y], ring) => {
+        const geo = petalGeo(w, h, cup, flare);
+        for (let i = 0; i < n; i++) {
+          const pv = new THREE.Group(); pv.rotation.y = (i + ring * 0.41) / n * Math.PI * 2; head.add(pv);
+          const pm = mk(geo, petalMat, 0, y, r, pv, false); pm.rotation.x = tilt;
+        }
+      });
+    const sepal = M('#356b2e', { roughness: 0.6, side: THREE.DoubleSide }), sepGeo = petalGeo(0.006, 0.02, 0.1, 0.002);
+    mk(new THREE.SphereGeometry(0.007, 12, 8), sepal, 0, -0.003, 0, head, false).scale.set(1, 0.8, 1);   // the green cup the bloom sits in
+    for (let i = 0; i < 5; i++) { const pv = new THREE.Group(); pv.rotation.y = i / 5 * Math.PI * 2 + 0.3; head.add(pv); mk(sepGeo, sepal, 0, -0.004, 0.004, pv, false).rotation.x = 2.2; }   // sepals curling down
+    { const fp = mk(new THREE.SphereGeometry(0.016, 12, 6, 0, Math.PI * 2, 0, Math.PI * 0.35), petalMat, 0.036, 0.0235, 0.018, rg, false); fp.rotation.set(Math.PI, 0.4, 0.15); fp.scale.set(1, 0.4, 0.6); }   // one petal has fallen
+    const glass = new THREE.MeshPhysicalMaterial({ color: '#eef4ff', roughness: 0.05, metalness: 0, transparent: true, opacity: 0.16, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.6, depthWrite: false, side: THREE.DoubleSide });
+    const dome = new THREE.Group(); rg.add(dome);
+    mk(new THREE.CylinderGeometry(0.062, 0.062, 0.15, 48, 1, true), glass, 0, 0.022 + 0.075, 0, dome, false);
+    mk(new THREE.SphereGeometry(0.062, 48, 16, 0, Math.PI * 2, 0, Math.PI / 2), glass, 0, 0.172, 0, dome, false);
+    mk(new THREE.SphereGeometry(0.011, 16, 12), glass, 0, 0.243, 0, dome, false);
+    dome.traverse(o => { if (o.isMesh) { o.renderOrder = 3; o.castShadow = false; } });
+    const glow = card(0.26, 0.26, '#ff3b55', 0, TEX.glow, rg); glow.position.set(0, 0.15, 0.07); dyn(glow); ROSE.glow = glow;
+    mk(new THREE.BoxGeometry(0.17, 0.27, 0.17), INVIS, 0, 0.13, 0, rg, false).userData.id = 'rose';
+  }
   blob(1.15, 0.6, CAB.x, CAB.z + 0.02, aoRectMat);
   // speaker
   const spk = new THREE.Group(); spk.position.set(0.3, CAB_TOP, -0.02); cab.add(spk);
@@ -2835,14 +2909,15 @@ const BAKE = bakeStatic(scene);
    SOUND: sfx, rain ambience, thunder, purring, hissing, candles, pre-rendered lo-fi radio
    ===================================================================== */
 const Sound = (() => {
-  let ctx = null, master, world, phones, sfx, amb, music, white = null, brown = null, ambOn = false, pad = null, hum = null;
+  let ctx = null, master, duck, heart, world, phones, sfx, amb, music, white = null, brown = null, ambOn = false, pad = null, hum = null;
   let on = true; try { on = localStorage.getItem('sewyed-sound') !== 'off'; } catch (e) {}
   function ensure() {
     try {
       if (!ctx) {
         ctx = new (window.AudioContext || window.webkitAudioContext)();
         master = ctx.createGain(); master.gain.value = on ? 1 : 0; master.connect(ctx.destination);
-        world = ctx.createGain(); world.connect(master); phones = ctx.createGain(); phones.connect(master);   // world = everything in the room; the headphones bypass it
+        duck = ctx.createGain(); duck.connect(master); heart = ctx.createGain(); heart.connect(master);   // duck: everything that is playing (room + headphones); the heartbeat stays in front
+        world = ctx.createGain(); world.connect(duck); phones = ctx.createGain(); phones.connect(duck);   // world = everything in the room; the headphones bypass it
         sfx = ctx.createGain(); sfx.connect(world); amb = ctx.createGain(); amb.gain.value = 0; amb.connect(world); music = ctx.createGain(); music.connect(world);
         const n = ctx.sampleRate * 2; white = ctx.createBuffer(1, n, ctx.sampleRate); brown = ctx.createBuffer(1, n, ctx.sampleRate);
         const w = white.getChannelData(0), b = brown.getChannelData(0); let last = 0;
@@ -2865,6 +2940,20 @@ const Sound = (() => {
     get ctx() { return ctx; },
     get musicBus() { ensure(); return music; },
     get phonesBus() { ensure(); return phones; },
+    HEART: [0.3, 0.58, 1.16, 1.44, 2.02, 2.3],   // lub-dub, three times (~70 bpm)
+    heartbeat() {   // everything playing sinks into the background, a heart beats for a few seconds, then it all comes back
+      if (!ensure()) return; const t0 = ctx.currentTime;
+      duck.gain.cancelScheduledValues(t0); duck.gain.setValueAtTime(duck.gain.value, t0); duck.gain.linearRampToValueAtTime(0.1, t0 + 0.35);
+      duck.gain.setValueAtTime(0.1, t0 + 2.75); duck.gain.linearRampToValueAtTime(1, t0 + 3.5);
+      this.HEART.forEach((at, i) => {
+        const t = t0 + at, strong = i % 2 === 0, o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+        o.type = 'sine'; o.frequency.setValueAtTime(strong ? 62 : 72, t); o.frequency.exponentialRampToValueAtTime(strong ? 38 : 44, t + 0.16);
+        lp.type = 'lowpass'; lp.frequency.value = 180; env(g, t, strong ? 0.9 : 0.6, 0.012, strong ? 0.22 : 0.17);
+        o.connect(lp).connect(g).connect(heart); o.start(t); o.stop(t + 0.3);
+        const n = src(brown, true), nf = ctx.createBiquadFilter(), ng = ctx.createGain(); nf.type = 'lowpass'; nf.frequency.value = 120; env(ng, t, strong ? 0.35 : 0.22, 0.01, 0.12);
+        n.connect(nf).connect(ng).connect(heart); n.start(t); n.stop(t + 0.2);
+      });
+    },
     muffle(on) { if (!ensure()) return; world.gain.setTargetAtTime(on ? 0 : 1, ctx.currentTime, on ? 0.25 : 0.5); },   // headphones on: the room goes quiet
     toggle() { on = !on; try { localStorage.setItem('sewyed-sound', on ? 'on' : 'off'); } catch (e) {} if (ctx) master.gain.setTargetAtTime(on ? 1 : 0, ctx.currentTime, 0.05); if (on) this.ambient(); return on; },
     ambient() {
@@ -3192,6 +3281,7 @@ let elapsed = 0;
 const pickRoots = [...pickables, ...books.map(b => b.mesh), mug, nb, pen, deck.g, gems.g, ch.root, chair];
 scene.traverse(o => { const id = o.userData && o.userData.id; if (id === 'lamp' || id === 'sconce' || id === 'repos' || id === 'persian' || id === 'plasma' || id === 'monstera' || id === 'pothosL' || id === 'door' || id === 'mailbox' || id === 'bot' || (typeof id === 'string' && id.startsWith('candle:'))) pickRoots.push(o); });
 pickRoots.push(guitar.gm, hp, PHONES.stand, ...CURTAINS.meshes, LIB.pick);
+scene.traverse(o => { if (o.userData && (o.userData.id === 'rose' || o.userData.id === 'cabinet')) pickRoots.push(o); });
 { const sp = mk(new THREE.PlaneGeometry(ROOM.x - 1.06, ROOM.h - 0.1), INVIS, (ROOM.x + 1.06) / 2, (ROOM.h - 0.1) / 2, ROOM.back + 0.004, scene, false); sp.userData.id = 'repos'; pickRoots.push(sp); }
 { const wp = mk(new THREE.PlaneGeometry(WIN.z1 - WIN.z0, WIN.y1 - WIN.y0), new THREE.MeshBasicMaterial({ visible: false }), -ROOM.x - 0.01, (WIN.y0 + WIN.y1) / 2, (WIN.z0 + WIN.z1) / 2, scene, false); wp.rotation.y = Math.PI / 2; wp.userData.id = 'window'; pickRoots.push(wp); }
 
@@ -3309,11 +3399,15 @@ function focusSurface() {
   _fd.subVectors(camera.position, hit.point).normalize(); if (_fn.dot(_fd) < 0) _fn.negate();
   const toT = hit.point.clone().addScaledVector(_fn, 0.45).clamp(T_MIN, T_MAX);
   const toP = keepInRoom(toT.clone().add(_fd.subVectors(camera.position, toT).normalize().multiplyScalar(clamp(camera.position.distanceTo(toT), 1.3, 2.2))));
-  if (view === 'shelf') leaveShelf(true); if (view === 'window') leaveWindow(true); if (view === 'library') leaveLibrary(true);
-  intro = null; catCam = null; controls.enabled = false;
-  focusTw = { t: 0, fromP: camera.position.clone(), fromT: controls.target.clone(), toP, toT };
-  return true;
+  focusTo(toT, toP); return true;
 }
+function focusTo(toT, toP) {   // fly the camera to look at toT from toP, then hand over to the orbit controls
+  if (seq || act) return;
+  if (view === 'shelf') leaveShelf(true); if (view === 'window') leaveWindow(true); if (view === 'library') leaveLibrary(true); if (view === 'mail') leaveMail(true);
+  intro = null; catCam = null; controls.enabled = false; tip.style.opacity = 0; tipFor = null;
+  focusTw = { t: 0, fromP: camera.position.clone(), fromT: controls.target.clone(), toP: toP.clone(), toT: toT.clone() };
+}
+const CAB_VIEW = { t: new V3(CAB.x, 0.56, CAB.z + 0.1), p: new V3(CAB.x - 0.08, 0.86, CAB.z + 1.62) };   // the whole cabinet, every cube and the record player on top
 const _np = new V3(), _nq = new V3();
 function nearestBook(cx, cy, maxPx) {
   let best = null, bd = maxPx;
@@ -3912,6 +4006,8 @@ function runAction(id) {
   else if (id === 'slot') openLetter();
   else if (id === 'bot') botSay(botTalk.on ? botTalk.i + 1 : 0);
   else if (id === 'library') enterLibrary();
+  else if (id === 'cabinet') focusTo(CAB_VIEW.t, CAB_VIEW.p);
+  else if (id === 'rose') { if (!ROSE.active) { soundOn(); ROSE.active = true; ROSE.t0 = elapsed; Sound.heartbeat(); } }
   else if (id === 'guitar') toggleGuitar();
   else if (id === 'phones') togglePhones();
   else if (id === 'curtains') { CURTAINS.want = CURTAINS.want ? 0 : 1; Sound.swish(); tipFor = null; }
@@ -3945,7 +4041,7 @@ function activate(id, point) {
   if (!id || view === 'door' || postTw) return;
   if (id.startsWith('card:')) { openCardLink(id); return; }
   if (view === 'card' && id !== 'slot' && id !== 'lofi') return;   // everything else lives inside
-  if (act && !(id === 'guitar' || id === 'lofi' || id === 'plasma' || id === 'lamp' || id === 'sconce' || id === 'curtains' || id === 'bot' || id.startsWith('candle:'))) return;   // Sina is busy with the guitar
+  if (act && !(id === 'guitar' || id === 'lofi' || id === 'plasma' || id === 'lamp' || id === 'sconce' || id === 'curtains' || id === 'bot' || id === 'rose' || id.startsWith('candle:'))) return;   // Sina is busy with the guitar
   if (ACTIONS[id] || id.startsWith('candle:')) { runAction(id); return; }
   const L = LINKS[id];
   if (seq || !L) return;
@@ -4392,7 +4488,8 @@ function perfTick(ms, now) {
   perf.acc += ms; perf.n++;
   if (perf.n < 40 || now - perf.last < 1500) return;
   const avg = perf.acc / perf.n; perf.acc = 0; perf.n = 0; perf.last = now;
-  if (avg > 21 && Q.dpr > Q.minDpr + 0.01) setDpr(Math.max(Q.minDpr, +(Q.dpr - 0.2).toFixed(2)));
+  if (avg > 21 && isTouch && bloom.enabled) bloom.enabled = false;   // on a phone the glow goes before the sharpness
+  else if (avg > 21 && Q.dpr > Q.minDpr + 0.01) setDpr(Math.max(Q.minDpr, +(Q.dpr - 0.15).toFixed(2)));
   else if (avg > 26 && bloom.enabled) bloom.enabled = false;
   else if (avg < 12.5 && Q.dpr < Q.maxDpr - 0.01) setDpr(Math.min(Q.maxDpr, +(Q.dpr + 0.1).toFixed(2)));
 }
@@ -4552,6 +4649,7 @@ const cityBase = new THREE.Color(0.85, 0.85, 0.9);
 
 function frame() {
   requestAnimationFrame(frame);
+  if (canvas.width < 2 && innerWidth > 1) dispatchEvent(new Event('resize'));   // started hidden at zero size: catch up
   const now = performance.now(), rawMs = now - lastNow, dt = clamp(rawMs / 1000, 0, 0.05); lastNow = now;
   elapsed += dt; const t = elapsed;
   perfTick(rawMs, now);
@@ -4622,6 +4720,13 @@ function frame() {
     const e = want + Math.sin(t * 2.3) * 0.05 + Math.sin(t * 5.1) * 0.03;
     for (const m of gems.glowMats) m.emissiveIntensity = damp(m.emissiveIntensity, e, 6, dt);
     gems.light.material.opacity = Math.min(0.5, gems.glow * 0.45 + (gems.hold || 0) * 0.3 + ZEN.k * 0.12); }
+  // the rose: a glow with each heartbeat
+  if (ROSE.active) {
+    const T = t - ROSE.t0; let p = 0;
+    for (const [i, at] of Sound.HEART.entries()) { const u = T - at; if (u > -0.02 && u < 0.4) p = Math.max(p, (i % 2 === 0 ? 1 : 0.7) * Math.exp(-u * 9) * smooth(-0.02, 0.02, u)); }
+    ROSE.petal.emissiveIntensity = 0.25 + p * 1.6; ROSE.glow.material.opacity = p * 0.35; ROSE.head.scale.setScalar(1 + p * 0.06);
+    if (T > 3.6) { ROSE.active = false; ROSE.petal.emissiveIntensity = 0.25; ROSE.glow.material.opacity = 0; ROSE.head.scale.setScalar(1); }
+  } else ROSE.petal.emissiveIntensity = damp(ROSE.petal.emissiveIntensity, hoverId === 'rose' ? 0.55 : 0.25, 6, dt);
   // the Persian
   if (catTrip) stepCat(dt);
   { const P = persian, nap = P.mode === 'nap', T = P.active ? t - P.t0 : 99, on = P.active ? 1 : 0;
