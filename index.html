@@ -405,7 +405,7 @@ const SITE = (() => {   // on GitHub Pages the owner, repo and address come from
 })();
 const MAIL_REPO = `${SITE.owner}/${SITE.repo}`, MAIL_CAT = 'mailbox';   // letters = GitHub Discussions in this category
 const SCREENS = ['github', 'vscode', 'ubuntu', 'telegram'];
-const AVATAR = { skin: '#b07f62', hair: '#120d0b', hoodie: '#17181c', pants: '#22283a', shoes: '#e4e2dc' };
+const AVATAR = { skin: '#b07f62', hair: '#120d0b', hoodie: '#b9a88e', pants: '#3f5578', shoes: '#e4e2dc' };
 
 /* ===================================================================== */
 const isTouch = matchMedia('(pointer: coarse)').matches;
@@ -2691,7 +2691,11 @@ const chair = dyn(new THREE.Group()); chair.position.copy(C); scene.add(chair);
   chair.traverse(o => { if (o.isMesh) o.raycast = noRaycast; });
   const proxy = mk(new THREE.BoxGeometry(0.56, 0.72, 0.14), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.88, 0.27, chair, false); proxy.userData.blocker = true;
 }
-const UPPER = 0.30, FORE = 0.25, HAND_LEN = 0.147, ARM = UPPER + FORE + HAND_LEN, THIGH = 0.45, SHIN = 0.43;
+// Sina's skeleton follows real proportions for a 1.76 m man (segment lengths after Drillis & Contini):
+// hip joints 0.93 up and 0.18 apart, thigh and shin 0.43 each, ankle 0.07 off the floor; lumbar joint just above the pelvis, a second (thoracic) joint under the ribs;
+// shoulder joints at 1.41, 0.37 apart, each on a collarbone that pivots at the breastbone; base of the neck at 1.48, skull pivot at 1.52, crown at 1.76
+const UPPER = 0.30, FORE = 0.25, HAND_LEN = 0.147, ARM = UPPER + FORE + HAND_LEN, THIGH = 0.43, SHIN = 0.43;
+const HIP_X = 0.09, ANKLE_Y = 0.07, SPINE_Y = 0.05, CHEST_Y = 0.19, SHOULDER = new V3(0.185, 0.235, 0), NECK_Y = 0.305;   // hips -> spine -> chest; shoulder joint and neck in the chest's frame
 const FACE = { brows: [], lips: [], glasses: null, bridge: null, quiz: 0, tilt: 0, lift: 0 };   // expression: quiz = one brow up, one knitted
 const ch = (() => {
   const skin = M(AVATAR.skin, { roughness: 0.62 });
@@ -2700,26 +2704,39 @@ const ch = (() => {
   const pants = M(AVATAR.pants, { roughness: 0.9 }), shoe = M(AVATAR.shoes, { roughness: 0.55 }), sole = M('#2a2a2a', { roughness: 0.8 });
   const root = dyn(new THREE.Group()); root.position.copy(C); scene.add(root);
   const hips = new THREE.Group(); hips.position.y = 0.56; root.add(hips);
-  const pelvis = mk(new THREE.CapsuleGeometry(0.12, 0.12, 6, 14), pants, 0, 0, 0, hips); pelvis.rotation.z = Math.PI / 2; pelvis.scale.set(1, 1, 0.85);
   const legs = {};
   for (const [k, s] of [['L', -1], ['R', 1]]) {
-    const upper = new THREE.Group(); upper.position.set(s * 0.1, -0.02, 0); hips.add(upper);
-    mk(new THREE.CapsuleGeometry(0.072, THIGH - 0.12, 6, 12), pants, 0, -THIGH / 2, 0, upper);
+    const upper = new THREE.Group(); upper.position.set(s * HIP_X, -0.02, 0); hips.add(upper);
     const lower = new THREE.Group(); lower.position.y = -THIGH; upper.add(lower);
-    mk(new THREE.CapsuleGeometry(0.056, SHIN - 0.1, 6, 12), pants, 0, -SHIN / 2, 0, lower);
     const foot = new THREE.Group(); foot.position.y = -SHIN; lower.add(foot);
-    mk(rbox(0.1, 0.07, 0.25, 0.03), shoe, 0, -0.012, -0.06, foot);
-    mk(rbox(0.104, 0.018, 0.254, 0.008), sole, 0, -0.045, -0.06, foot);
+    {   // a sneaker, lofted from heel to toe: narrow heel, wide ball, rounded toe box; the sole is the same outline, a little proud of the upper
+      const N = 16, R = 20, pos = [], idx = [];
+      for (let i = 0; i <= N; i++) {
+        const u = i / N, z = lerp(0.075, -0.185, u);                                                       // heel (+z) to toe (-z)
+        const w = (0.034 + 0.017 * Math.sin(Math.PI * Math.min(1, u * 1.25)) - 0.011 * smooth(0.8, 1, u)) * Math.min(1, Math.sin(Math.PI * u) * 4 + 0.2);
+        const top = lerp(0.034, -0.012, smooth(0.3, 0.95, u)) - 0.01 * smooth(0.9, 1, u), bot = -0.05;
+        for (let j = 0; j < R; j++) { const a = j / R * Math.PI * 2, cx = Math.cos(a), cy = Math.sin(a);
+          pos.push(Math.sign(cx) * Math.pow(Math.abs(cx), 0.7) * w, cy > 0 ? lerp(bot + 0.022, top, Math.pow(cy, 0.6)) : lerp(bot + 0.022, bot, Math.pow(-cy, 0.5)), z); }
+      }
+      for (let i = 0; i < N; i++) for (let j = 0; j < R; j++) { const a = i * R + j, b = i * R + (j + 1) % R, c = a + R, d = b + R; idx.push(a, c, b, b, c, d); }
+      for (const [i, rev] of [[0, false], [N, true]]) { const c0 = pos.length / 3; let cx = 0, cy = 0; for (let j = 0; j < R; j++) { cx += pos[(i * R + j) * 3]; cy += pos[(i * R + j) * 3 + 1]; } pos.push(cx / R, cy / R, pos[i * R * 3 + 2] + (rev ? -0.006 : 0.006)); for (let j = 0; j < R; j++) { const a = i * R + j, b = i * R + (j + 1) % R; if (rev) idx.push(c0, b, a); else idx.push(c0, a, b); } }
+      const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.setIndex(idx); sg.computeVertexNormals();
+      mk(sg, shoe, 0, 0, 0, foot);
+      mk(sg.clone().scale(1.06, 0.24, 1.03), M('#b9b3a8', { roughness: 0.85 }), 0, -0.041, -0.002, foot);
+      mk(new THREE.TorusGeometry(0.04, 0.009, 8, 20), shoe, 0, 0.034, 0.02, foot).rotation.x = Math.PI / 2 + 0.22;   // padded collar
+      mk(new THREE.CylinderGeometry(0.033, 0.036, 0.05, 14), M('#d9d6cf', { roughness: 0.9 }), 0, 0.052, 0.012, foot);   // sock
+    }
     legs[k] = { upper, lower, foot, side: s, tgt: new V3(), pole: new V3() };
   }
-  const spine = new THREE.Group(); spine.position.y = 0.02; spine.rotation.order = 'YXZ'; hips.add(spine);
-  const chest = mk(new THREE.CapsuleGeometry(0.16, 0.26, 8, 18), hood, 0, 0.3, 0, spine); chest.scale.set(1.2, 1, 0.8);
-  mk(new THREE.CapsuleGeometry(0.15, 0.1, 6, 14), hood, 0, 0.12, 0, spine).scale.set(1.15, 1, 0.82);
-  mk(new THREE.TorusGeometry(0.098, 0.05, 12, 28), hood, 0, 0.555, 0.02, spine).rotation.x = Math.PI / 2 + 0.28;
-  mk(new THREE.SphereGeometry(0.115, 20, 14), hood, 0, 0.51, 0.105, spine).scale.set(1.3, 0.72, 0.75);
-  for (const s of [-1, 1]) mk(new THREE.CylinderGeometry(0.0045, 0.0045, 0.13, 6), M('#d9dbe4'), s * 0.04, 0.46, -0.125, spine).rotation.x = 0.1;
-  const neck = new THREE.Group(); neck.position.y = 0.565; spine.add(neck);
-  mk(new THREE.CylinderGeometry(0.046, 0.05, 0.075, 16), skin, 0, 0.025, 0, neck);
+  const spine = new THREE.Group(); spine.position.y = SPINE_Y; spine.rotation.order = 'YXZ'; hips.add(spine);            // lumbar joint
+  const chest = new THREE.Group(); chest.position.y = CHEST_Y; chest.rotation.order = 'YXZ'; spine.add(chest);          // thoracic joint: the ribcage, shoulders and neck ride on it
+  const ribs = new THREE.Group(); ribs.position.set(0, 0.1, 0); chest.add(ribs);
+  const lapB = new THREE.Group(); lapB.position.set(0, -0.02, 0); hips.add(lapB);   // a leaf bone at the hip joints: it folds forward only as far as BOTH thighs do (sitting, bending), so the hoodie's skirt lies over the lap but stays put while he walks                                        // a leaf bone: breathing swells the front of the ribcage
+  mk(new THREE.TorusGeometry(0.086, 0.042, 12, 28), hood, 0, NECK_Y - 0.012, 0.022, chest).rotation.x = Math.PI / 2 + 0.26;   // the hood's rolled collar
+  mk(new THREE.SphereGeometry(0.1, 20, 14), hood, 0, NECK_Y - 0.06, 0.098, chest).scale.set(1.3, 0.7, 0.72);                  // the hood bunched behind the neck
+  for (const s of [-1, 1]) mk(new THREE.CylinderGeometry(0.0042, 0.0042, 0.12, 6), M('#d9dbe4'), s * 0.036, NECK_Y - 0.11, -0.118, chest).rotation.x = 0.12;   // drawstrings
+  const neck = new THREE.Group(); neck.position.set(0, NECK_Y, 0.012); neck.rotation.order = 'YXZ'; chest.add(neck);
+  mk(new THREE.CylinderGeometry(0.05, 0.056, 0.1, 18), skin, 0, 0.012, 0, neck);
   const head = new THREE.Group(); head.position.y = 0.045; head.rotation.order = 'YXZ'; neck.add(head);
   // the head: one sculpted surface (cranium, cheeks, tapering jaw, chin, back of the skull) instead of scaled balls;
   // the hair is the same surface pushed outwards, so it hugs the skull like real short hair
@@ -2808,13 +2825,11 @@ const ch = (() => {
   }
   const arms = {};
   for (const [k, s] of [['L', -1], ['R', 1]]) {
-    const upper = new THREE.Group(); upper.position.set(s * 0.205, 0.53, 0); spine.add(upper);
-    mk(new THREE.SphereGeometry(0.068, 16, 12), hood, 0, 0, 0, upper);
-    mk(new THREE.CapsuleGeometry(0.056, 0.2, 6, 12), hood, 0, -0.15, 0, upper);
+    const clav = new THREE.Group(); clav.position.set(s * 0.03, SHOULDER.y + 0.012, -0.03); clav.rotation.order = 'YZX'; chest.add(clav);   // collarbone: pivots at the breastbone, carries the shoulder joint
+    const upper = new THREE.Group(); upper.position.set(s * (SHOULDER.x - 0.03), -0.012, 0.03); clav.add(upper);
     const fore = new THREE.Group(); fore.position.y = -UPPER; upper.add(fore);
-    mk(new THREE.SphereGeometry(0.052, 14, 10), hood, 0, 0, 0, fore);
-    mk(new THREE.CapsuleGeometry(0.047, 0.17, 6, 12), hood, 0, -0.12, 0, fore);
-    mk(new THREE.TorusGeometry(0.043, 0.013, 8, 18), hood, 0, -0.232, 0, fore).rotation.x = Math.PI / 2;
+    mk(new THREE.TorusGeometry(0.039, 0.012, 8, 18), hood, 0, -0.232, 0, fore).rotation.x = Math.PI / 2;   // ribbed cuff
+    mk(new THREE.CylinderGeometry(0.022, 0.025, 0.07, 14), skin, 0, -FORE + 0.028, 0, fore);              // the wrist, up inside the cuff
     const hand = new THREE.Group(); hand.position.y = -FORE; fore.add(hand);
     // palm, then four fingers with three joints each and a two-joint thumb (curled by poseHand); palm side = +z, fingers along -y
     mk(rbox(0.06, 0.07, 0.024, 0.011), skin, 0, -0.047, 0.001, hand);
@@ -2829,13 +2844,116 @@ const ch = (() => {
     const t1 = seg(tb, 0.026, 0.0098, 0), t2 = seg(t1, 0.022, 0.009, -0.026);
     const tipGlow = mk(new THREE.SphereGeometry(0.012, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), 0, fingers[0].tip, 0, fingers[0].j[2], false);
     const pose = { c: [0.45, 0.4, 0.42, 0.48], t: 0.35 };
-    arms[k] = { upper, fore, hand, side: s, tipGlow, fingers, thumb: [tb, t1, t2], pose, tgt: new V3(), pole: new V3() };
+    arms[k] = { clav, upper, fore, hand, side: s, tipGlow, fingers, thumb: [tb, t1, t2], pose, tgt: new V3(), pole: new V3() };
   }
+  // >>> SINA BODY MESH
+  {   // the body: skinned clothes over the skeleton. Each garment is lofted ring by ring in the rest pose (arms and legs hang straight),
+      // with an anatomical cross-section at every station (ribcage, waist, pelvis; deltoid, biceps, elbow, forearm; glute, quad, knee, calf),
+      // and bound to the rig's own groups, so joints bend as cloth over a body instead of balls between capsules.
+    const BONES = [hips, lapB, spine, chest, ribs, arms.L.clav, arms.L.upper, arms.L.fore, arms.R.clav, arms.R.upper, arms.R.fore, legs.L.upper, legs.L.lower, legs.R.upper, legs.R.lower];
+    root.updateMatrixWorld(true);
+    const rootInv = new THREE.Matrix4().copy(root.matrixWorld).invert(), at = (o) => o.getWorldPosition(new V3()).applyMatrix4(rootInv);
+    // station: [y, cx, cz, rx, rzFront, rzBack, n (superellipse), weights]; weights: [[bone, w], ...] or (x, z) => that list. Front is -z.
+    const loft = (st, R, mat) => {
+      const pos = [], uv = [], si = [], sw = [], idx = [];
+      st.forEach((q, i) => {
+        const [y, cx, cz, rx, rzF, rzB, n, w] = q;
+        for (let j = 0; j <= R; j++) {
+          const a = j / R * Math.PI * 2 + Math.PI / 2, c = Math.cos(a), sn = Math.sin(a), e = 2 / n;
+          const x = cx + rx * Math.sign(c) * Math.pow(Math.abs(c), e), z = cz + (sn < 0 ? rzF : rzB) * Math.sign(sn) * Math.pow(Math.abs(sn), e);
+          pos.push(x, y, z); uv.push(j / R * 3, i / (st.length - 1) * 4);
+          let ww = (typeof w === 'function' ? w(x, z) : w).filter(v => v[1] > 1e-4).sort((p, q2) => q2[1] - p[1]).slice(0, 4); while (ww.length < 4) ww.push([hips, 0]);
+          const tot = ww.reduce((m, v) => m + v[1], 0);
+          si.push(...ww.map(v => BONES.indexOf(v[0]))); sw.push(...ww.map(v => v[1] / tot));
+        }
+      });
+      const up = st[st.length - 1][0] > st[0][0];
+      for (let i = 0; i < st.length - 1; i++) for (let j = 0; j < R; j++) { const a = i * (R + 1) + j, b = a + 1, c = a + R + 1, d = c + 1; if (up) idx.push(a, c, b, b, c, d); else idx.push(a, b, c, b, d, c); }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); g.setIndex(idx);
+      g.computeVertexNormals();
+      const nn = g.attributes.normal;   // weld the seam's normals
+      for (let i = 0; i < st.length; i++) { const a = i * (R + 1), b = a + R, x = nn.getX(a) + nn.getX(b), y = nn.getY(a) + nn.getY(b), z = nn.getZ(a) + nn.getZ(b), l = Math.hypot(x, y, z) || 1; nn.setXYZ(a, x / l, y / l, z / l); nn.setXYZ(b, x / l, y / l, z / l); }
+      const m = new THREE.SkinnedMesh(g, mat); m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; root.add(m);
+      return m;
+    };
+    const mix2 = (a, b, k) => [[a, 1 - k], [b, k]];
+    const H = at(hips).y, Sp = at(spine).y, Ch = at(chest).y, Sh = at(arms.R.upper).y, Nk = at(neck).y;
+    // ---- hoodie: ribbed hem on the hips, a waist, the ribcage (it breathes), shoulders sloping up to the collar ----
+    const girdle = (x, z, k) => { const a = Math.abs(x), g = smooth(0.07, 0.16, a) * k, cl = x < 0 ? arms.L.clav : arms.R.clav; return [[chest, 1 - g], [cl, g]]; };   // the shoulder slope follows the collarbone
+    const rib = (x, z, k) => { const f = smooth(0.03, -0.06, z) * k; return [[chest, 1 - f], [ribs, f]]; };                                                       // only the front of the ribcage breathes
+    const KH = (y) => 1 - smooth(H - 0.06, H + 0.11, y);   // how much of the thigh's swing reaches this height: all of it at the hem, none by the waist
+    const lap = (x, z, k, base) => { const t = k * smooth(0.02, -0.06, z); return base.map(([b, w]) => [b, w * (1 - t)]).concat([[lapB, t]]); };   // the front of the hip region folds with the lap bone (hoodie skirt and trouser top alike, so the two layers always move together)
+    loft([
+      [H - 0.06, 0, 0.008, 0.146, 0.092, 0.114, 2.6, (x, z) => lap(x, z, KH(H - 0.06), [[hips, 1]])],                 // tucked under: the hem's inner edge
+      [H - 0.082, 0, 0.008, 0.17, 0.106, 0.132, 2.6, (x, z) => lap(x, z, KH(H - 0.082), [[hips, 1]])],                // the ribbed hem
+      [H - 0.055, 0, 0.008, 0.176, 0.113, 0.138, 2.6, (x, z) => lap(x, z, KH(H - 0.055), [[hips, 1]])],
+      [H - 0.01, 0, 0.007, 0.176, 0.114, 0.138, 2.5, (x, z) => lap(x, z, KH(H - 0.01), [[hips, 1]])],                 // the hips, at their widest
+      [Sp + 0.01, 0, 0.004, 0.164, 0.112, 0.12, 2.3, (x, z) => lap(x, z, KH(Sp + 0.01), mix2(hips, spine, 0.35))],
+      [Sp + 0.075, 0, 0.0, 0.15, 0.106, 0.1, 2.3, mix2(hips, spine, 0.85)],                // the waist
+      [Sp + 0.135, 0, -0.003, 0.149, 0.108, 0.098, 2.3, mix2(spine, chest, 0.25)],
+      [Ch + 0.01, 0, -0.006, 0.153, 0.114, 0.102, 2.35, mix2(spine, chest, 0.65)],          // lower ribs
+      [Ch + 0.075, 0, -0.01, 0.16, 0.122, 0.108, 2.4, (x, z) => rib(x, z, 0.75)],           // the chest
+      [Ch + 0.14, 0, -0.01, 0.164, 0.122, 0.112, 2.4, (x, z) => rib(x, z, 0.6)],            // armpit level
+      [Sh - 0.035, 0, -0.006, 0.164, 0.113, 0.113, 2.3, (x, z) => girdle(x, z, 0.35)],
+      [Sh + 0.006, 0, 0.0, 0.158, 0.1, 0.108, 2.15, (x, z) => girdle(x, z, 0.6)],           // over the shoulder joints
+      [Sh + 0.034, 0, 0.006, 0.136, 0.086, 0.1, 2.05, (x, z) => girdle(x, z, 0.6)],         // the trapezius slope
+      [Sh + 0.056, 0, 0.012, 0.102, 0.072, 0.09, 2.0, (x, z) => girdle(x, z, 0.3)],
+      [Nk + 0.004, 0, 0.016, 0.074, 0.06, 0.074, 2, [[chest, 1]]],                          // into the collar
+      [Nk + 0.02, 0, 0.018, 0.064, 0.054, 0.066, 2, [[chest, 1]]],
+      [Nk + 0.012, 0, 0.018, 0.057, 0.048, 0.059, 2, [[chest, 1]]],                         // folded in
+    ], 40, hood);
+    for (const k of ['L', 'R']) {
+      const A = arms[k], sd = A.side, sx = at(A.upper).x, E = at(A.fore).y, W = at(A.hand).y;
+      const el = (y) => mix2(A.upper, A.fore, smooth(E + 0.075, E - 0.075, y));   // a soft, full elbow
+      // ---- sleeve: the cap over the deltoid, biceps, a full elbow, the forearm's taper into the cuff ----
+      loft([
+        [Sh + 0.05, sx - sd * 0.046, 0.004, 0.003, 0.004, 0.004, 2, [[A.clav, 0.6], [A.upper, 0.4]]],          // closed over the top of the shoulder
+        [Sh + 0.04, sx - sd * 0.04, 0.004, 0.036, 0.044, 0.046, 2, [[A.clav, 0.6], [A.upper, 0.4]]],
+        [Sh + 0.03, sx - sd * 0.012, 0.004, 0.05, 0.054, 0.056, 2, [[A.clav, 0.35], [A.upper, 0.65]]],
+        [Sh + 0.006, sx - sd * 0.002, 0.003, 0.058, 0.059, 0.061, 2, [[A.clav, 0.12], [A.upper, 0.88]]],      // the deltoid
+        [Sh - 0.04, sx, 0.002, 0.058, 0.058, 0.06, 2, [[A.upper, 1]]],
+        [Sh - 0.11, sx, 0, 0.054, 0.056, 0.055, 2, [[A.upper, 1]]],                                          // biceps / triceps
+        [Sh - 0.19, sx, 0, 0.05, 0.051, 0.052, 2, el(Sh - 0.19)],
+        [E + 0.04, sx, 0.001, 0.05, 0.05, 0.054, 2, el(E + 0.04)],
+        [E, sx, 0.004, 0.053, 0.051, 0.059, 2, el(E)],                                                         // the elbow, fuller behind
+        [E - 0.04, sx, 0.002, 0.052, 0.053, 0.054, 2, el(E - 0.04)],                                           // the forearm's belly
+        [E - 0.1, sx, 0, 0.049, 0.049, 0.049, 2, el(E - 0.1)],
+        [E - 0.17, sx, 0, 0.044, 0.044, 0.044, 2, [[A.fore, 1]]],
+        [W + 0.03, sx, 0, 0.04, 0.04, 0.04, 2, [[A.fore, 1]]],
+        [W + 0.012, sx, 0, 0.036, 0.036, 0.036, 2, [[A.fore, 1]]],
+      ], 24, hood);
+      const L = legs[k], lx = at(L.upper).x, Hj = at(L.upper).y, Kn = at(L.lower).y, An = at(L.foot).y;
+      const kn = (y) => mix2(L.upper, L.lower, smooth(Kn + 0.075, Kn - 0.075, y));   // a soft, full knee
+      // ---- trouser leg: seat and glute, the quad, a knee that keeps its volume, the calf, a straight hem over the shoe ----
+      loft([
+        [Hj + 0.08, lx * 0.5, 0.006, 0.08, 0.08, 0.09, 2.2, (x, z) => lap(x, z, KH(Hj + 0.08), [[hips, 1]])],          // up inside the hoodie: narrower than it all round, and moving exactly as it does
+        [Hj + 0.03, lx * 0.66, 0.006, 0.085, 0.084, 0.096, 2.2, (x, z) => lap(x, z, KH(Hj + 0.03), [[hips, 1]])],      // the seat
+        [Hj - 0.03, lx * 0.78, 0.006, 0.086, 0.086, 0.1, 2.15, (x, z) => lap(x, z, KH(Hj - 0.03), [[hips, 1]])],
+        [Hj - 0.085, lx, 0.004, 0.088, 0.095, 0.1, 2.1, [[hips, 0.12], [L.upper, 0.88]]],                    // the top of the thigh, below the hem
+        [Hj - 0.16, lx, 0.002, 0.088, 0.094, 0.092, 2, [[L.upper, 1]]],                                        // the quad
+        [Hj - 0.25, lx, 0, 0.08, 0.086, 0.082, 2, [[L.upper, 1]]],
+        [Kn + 0.09, lx, 0, 0.071, 0.075, 0.071, 2, kn(Kn + 0.09)],
+        [Kn + 0.04, lx, -0.003, 0.066, 0.071, 0.066, 2, kn(Kn + 0.04)],
+        [Kn, lx, -0.005, 0.064, 0.071, 0.065, 2, kn(Kn)],                                                      // the kneecap
+        [Kn - 0.04, lx, -0.002, 0.062, 0.064, 0.066, 2, kn(Kn - 0.04)],
+        [Kn - 0.11, lx, 0.004, 0.062, 0.056, 0.071, 2, kn(Kn - 0.11)],                                         // the calf
+        [Kn - 0.2, lx, 0.004, 0.057, 0.053, 0.063, 2, [[L.lower, 1]]],
+        [Kn - 0.3, lx, 0.003, 0.053, 0.052, 0.054, 2, [[L.lower, 1]]],
+        [An + 0.045, lx, 0.004, 0.053, 0.054, 0.054, 2, [[L.lower, 1]]],                                       // the hem, over the shoe's collar
+        [An + 0.03, lx, 0.004, 0.047, 0.048, 0.048, 2, [[L.lower, 1]]],
+      ], 24, pants);
+    }
+    const skel = new THREE.Skeleton(BONES);
+    root.updateMatrixWorld(true); root.children.forEach(m => { if (m.isSkinnedMesh) m.bind(skel); });
+  }
+  // <<< SINA BODY MESH
   root.traverse(o => { if (o.isMesh || o.isInstancedMesh) o.raycast = noRaycast; });
   const proxyMat = new THREE.MeshBasicMaterial({ visible: false });
-  mk(new THREE.BoxGeometry(0.46, 0.62, 0.3), proxyMat, 0, 0.32, 0, spine, false).userData.blocker = true;
+  mk(new THREE.BoxGeometry(0.44, 0.56, 0.28), proxyMat, 0, 0.27, 0, spine, false).userData.blocker = true;
   const headBlock = mk(new THREE.SphereGeometry(0.14, 10, 8), proxyMat, 0, 0.11, 0, head, false); headBlock.userData.blocker = true;
-  return { root, hips, spine, chest, neck, head, headBlock, arms, legs };
+  return { root, hips, lap: lapB, spine, chest, ribs, neck, head, headBlock, arms, legs };
 })();
 const _S = new V3(), _E = new V3(), _dir = new V3(), _perp = new V3(), _tip = new V3(), _tmp = new V3(), _q = new THREE.Quaternion(), _pq = new THREE.Quaternion(), _eul = new THREE.Euler();
 const DOWN = new V3(0, -1, 0);
@@ -4436,7 +4554,7 @@ function activate(id, point) {
     drawInk(0); Sound.tap(1.1); Sound.scribble(1.6, 2.75);
   } else if (L.kind === 'book') {
     const b = books.find(x => x.id === id), bp = b.mesh.position, standX = clamp(bp.x, 1.32, 1.65);
-    const curve = new THREE.CatmullRomCurve3([new V3(0, 0, 0.0), new V3(0.6, 0, 0.12), new V3(1.24, 0, 0.06), new V3(standX, 0, -0.28)], false, 'centripetal');
+    const curve = new THREE.CatmullRomCurve3([new V3(0, 0, 0.08), new V3(0.6, 0, 0.14), new V3(1.24, 0, 0.06), new V3(standX, 0, -0.28)], false, 'centripetal');
     const touchP = new V3(bp.x, bp.y + b.h * 0.08, bp.z + b.d / 2 + 0.006);
     seq = { ...base, book: b, curve, len: curve.getLength(), s: 0, speed: 0, phase: 'rise', touchP, arm: bp.x < standX - 0.02 ? ch.arms.L : ch.arms.R, camPos: camera.position.clone(), camTgt: controls.target.clone() };
   }
@@ -4511,9 +4629,9 @@ const pointQ = (out) => { const sh = ch.arms.R.upper.getWorldPosition(_hx); _hf.
 const pushQ = (out) => { ch.head.getWorldQuaternion(_hq); return handQ(out, _hf.set(0, 1, 0).addScaledVector(_hpv.set(0, 0, 1).applyQuaternion(_hq), -0.3), _hpv.set(0, 0, 1).applyQuaternion(_hq)); };
 const ARMOV = { L: { w: 0, get: null, pole: new V3(), poleGet: null, orient: null, ow: 0, hp: HP_KNUCKLE, hand: null }, R: { w: 0, get: null, pole: new V3(), poleGet: null, orient: null, ow: 0, hp: HP_PINCH, hand: null } };
 const ACT = {
-  SEAT_STAND: new V3(-1.52, 0, -0.3), SEAT_SIT: new V3(-1.9, 0, -0.3),
-  toGuitar: [[0, 0], [-0.5, 0.12], [-1.0, 0.65], [-1.32, 1.18], [-1.56, 1.36]],
-  toSeat: [[-1.56, 1.36], [-1.25, 1.05], [-1.15, 0.45], [-1.3, -0.1], [-1.52, -0.3]],
+  SEAT_STAND: new V3(-1.47, 0, -0.2), SEAT_SIT: new V3(-1.86, 0, -0.3),
+  toGuitar: [[0, 0.08], [-0.5, 0.16], [-1.0, 0.65], [-1.28, 1.16], [-1.44, 1.36]],
+  toSeat: [[-1.44, 1.36], [-1.2, 1.05], [-1.1, 0.45], [-1.27, 0.08], [-1.44, -0.16], [-1.47, -0.2]],
   CAM_P: new V3(-0.42, 1.5, 0.95), CAM_T: new V3(-1.88, 0.86, 0.02),
 };
 const curveOf = (pts, rev) => { const P = (rev ? [...pts].reverse() : pts).map(([x, z]) => new V3(x, 0, z)), c = new THREE.CatmullRomCurve3(P, false, 'centripetal'); return { c, len: c.getLength(), s: 0, speed: 0 }; };
@@ -4522,12 +4640,16 @@ const gPose = (yDir, front, anchorModel, anchorAt) => {   // guitar pose in Sina
   const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
   return { p: anchorAt.clone().sub(anchorModel.clone().multiplyScalar(GTR.S).applyQuaternion(q)), q };
 };
-const G_CARRY = gPose(new V3(0.06, 0.97, -0.22), new V3(-1, 0, 0), GTR.GRIP, new V3(-0.3, 0.84, -0.06));   // held by the neck at his left side
+const G_CARRY = gPose(new V3(0.06, 0.97, -0.22), new V3(-1, 0, 0), GTR.GRIP, new V3(-0.27, 0.8, -0.04));   // held by the neck at his left side
 const G_PLAY = gPose(new V3(-0.74, 0.62, -0.18), new V3(0, 0.25, -1), GTR.WAIST, new V3(0.12, 0.805, -0.22));   // across the lap, neck up to the left
-const setGPose = (a, b, k) => { guitar.gm.position.lerpVectors(a.p, b.p, k); guitar.gm.quaternion.slerpQuaternions(a.q, b.q, k); };
+const setGPose = (a, b, k, kq = k) => { guitar.gm.position.lerpVectors(a.p, b.p, k); guitar.gm.quaternion.slerpQuaternions(a.q, b.q, kq); };
+// the guitar is carried round the body, never through it: out in front of the knees on its way to and from the stand, up over the thighs on its way to and from the lap
+const G_ARC = new V3(0, 0.05, -0.2), _gp1 = new V3();
+const gArc = (arc, k) => guitar.gm.position.addScaledVector(arc, k);
+const G_HOLD = 0.09;   // how much higher than its place on the lap the guitar is held while he sits down / gets up
 const _av = new V3(), _av2 = new V3(), _av3 = new V3(), _actLook = new V3();
 const gPt = (out, x, y, z) => guitar.gm.localToWorld(out.set(x, y, z));
-const hangR = (out) => { ch.arms.R.upper.getWorldPosition(out); return out.add(_av3.set(0.06, -0.56, -0.03).applyAxisAngle(UP, body.yaw)); };
+const hangR = (out) => { ch.arms.R.upper.getWorldPosition(out); return out.add(_av3.set(0.032, -0.69, -0.01).applyAxisAngle(UP, body.yaw)); };   // hanging loose at his side, the elbow barely bent
 function soundOn() { if (!Sound.on) $('#btnSound').textContent = Sound.toggle() ? '🔊' : '🔇'; Sound.ambient(); }
 function toggleGuitar() {
   if (seq || PHONES.anim || view === 'card' || view === 'door' || postTw) return;
@@ -4560,7 +4682,7 @@ function stepAct(dt, t, o) {   // o: { stand, gait, look, pitch }
   L.orient = R.orient = null; L.ow = R.ow = 0; L.hand = L.w > 0.3 ? HP.GRIP : null; R.hand = null; R.hp = HP_PINCH;   // set again below where the phase needs them
   const walk = (next) => {
     const W = A.W, rem = W.len - W.s;
-    W.speed = Math.min(rem < 0.35 ? Math.max(0.3, rem * 2.2) : 0.85, W.speed + dt * 1.8);
+    W.speed = Math.min(rem < 0.4 ? Math.max(0.1, rem * 2.1) : 0.85, W.speed + dt * 1.8);
     W.s = Math.min(W.len, W.s + W.speed * dt);
     const u = W.len > 0 ? W.s / W.len : 1, p = W.c.getPointAt(u), tn = W.c.getTangentAt(u);
     body.pos.set(p.x, 0, p.z); body.yaw = dampAngle(body.yaw, Math.atan2(-tn.x, -tn.z), 7, dt);
@@ -4570,7 +4692,7 @@ function stepAct(dt, t, o) {   // o: { stand, gait, look, pitch }
   };
   const face = (yaw, next) => {
     o.stand = 1; body.yaw = dampAngle(body.yaw, yaw, 6, dt); const d = Math.abs(wrapA(body.yaw - yaw)); o.gait = d > 0.08 ? 0.45 : 0; body.phase += dt * 6;
-    if (d < 0.06 && pt > 0.35) go(next);
+    if (d < 0.06 && pt > 0.35 && (pt > 2.5 || !GAIT.L.swing && !GAIT.R.swing && Math.abs(wrapA(GAIT.L.yaw - yaw)) < 0.3 && Math.abs(wrapA(GAIT.R.yaw - yaw)) < 0.3)) go(next);
   };
   const grip = (out) => gPt(out, GTR.GRIP.x, GTR.GRIP.y, GTR.GRIP.z);
   const fret = (out) => gPt(out, -0.034, A.fretY, 0.004);   // the knuckles, just over the bass edge of the neck
@@ -4579,18 +4701,18 @@ function stepAct(dt, t, o) {   // o: { stand, gait, look, pitch }
   switch (A.phase) {
     case 'rise': {   // push the chair back and stand up
       const k = clamp(pt / 1.0, 0, 1);
-      o.stand = ease(k); body.pos.set(C.x, 0, lerp(C.z, 0, ease(k))); body.chairZ = lerp(C.z, C.z + 0.34, ease(clamp(pt / 0.7, 0, 1))); body.leanExtra = Math.sin(Math.PI * k) * 0.42;
+      o.stand = ease(k); body.pos.set(C.x, 0, lerp(C.z, 0.08, ease(k))); body.chairZ = lerp(C.z, C.z + 0.34, ease(clamp(pt / 0.7, 0, 1))); body.leanExtra = Math.sin(Math.PI * k) * 0.42;
       if (k >= 1) { A.W = curveOf(ACT.toGuitar); go('walk1'); }
       break;
     }
     case 'walk1': walk('face1'); break;
     case 'face1': face(Math.PI / 2, 'grab'); break;
     case 'grab': {   // reach for the neck, lift it off the stand
-      o.stand = 1; L.get = grip; L.pole.set(-0.7, -0.5, 0.6); o.look = grip(_actLook);
+      o.stand = 1; L.get = grip; L.pole.set(-0.35, -0.6, 0.75); o.look = grip(_actLook);
       if (pt < 0.7) { L.w = ease(pt / 0.7); body.leanExtra = damp(body.leanExtra, 0.32, 4, dt); }
       else {
         if (!A.held) { A.held = true; ch.root.updateMatrixWorld(true); gm.updateWorldMatrix(true, false); ch.root.attach(gm); A.from = { p: gm.position.clone(), q: gm.quaternion.clone() }; Sound.click(); }
-        L.w = 1; setGPose(A.from, G_CARRY, ease(clamp((pt - 0.7) / 0.8, 0, 1))); body.leanExtra = damp(body.leanExtra, 0.05, 4, dt);
+        { const kg = ease(clamp((pt - 0.7) / 0.8, 0, 1)); L.w = 1; setGPose(A.from, G_CARRY, kg); gArc(G_ARC, Math.sin(Math.PI * kg)); } body.leanExtra = damp(body.leanExtra, 0.05, 4, dt);
         if (pt >= 1.55) { A.W = curveOf(ACT.toSeat); go('walk2'); }
       }
       break;
@@ -4598,10 +4720,11 @@ function stepAct(dt, t, o) {   // o: { stand, gait, look, pitch }
     case 'walk2': L.w = 1; walk('face2'); break;
     case 'face2': L.w = 1; face(-Math.PI / 2, 'sit'); break;
     case 'sit': {   // sit back onto the window seat, bring the guitar onto the lap
-      const k = clamp(pt / 1.2, 0, 1), e = ease(k);
-      o.stand = 1 - e; body.pos.lerpVectors(ACT.SEAT_STAND, ACT.SEAT_SIT, e); body.yaw = -Math.PI / 2; setGPose(G_CARRY, G_PLAY, e);
-      const s1 = smooth(0.2, 0.9, k), s2 = smooth(0.3, 1, k);
-      L.w = 1; L.get = (out) => grip(out).lerp(fret(_av2), s1); L.pole.set(-0.7, -0.5, 0.6).lerp(_av.set(-0.9, -0.7, 0.1), s1);
+      const k = clamp(pt / 2.0, 0, 1), kA = ease(clamp(k / 0.42, 0, 1)), kB = clamp((k - 0.42) / 0.58, 0, 1), e = ease(kB);   // A: the guitar comes round to the front; B: he sits
+      o.stand = 1 - e; body.pos.lerpVectors(ACT.SEAT_STAND, ACT.SEAT_SIT, e); body.yaw = -Math.PI / 2;
+      setGPose(G_CARRY, G_PLAY, kA); gArc(G_ARC, Math.sin(Math.PI * kA) * 1.4); gm.position.y += G_HOLD * kA * (1 - smooth(0.82, 1, kB));   // held a little high until he is down, then settled on the thigh
+      const s1 = smooth(0.3, 0.8, k), s2 = smooth(0.15, 0.6, k);
+      L.w = 1; L.get = (out) => grip(out).lerp(fret(_av2), s1); L.pole.set(-0.35, -0.6, 0.75).lerp(_av.set(-0.9, -0.7, 0.1), s1);
       R.w = 1; R.get = (out) => hangR(out).lerp(strum(_av2), s2); R.pole.set(0.9, -0.5, 0.5); R.poleGet = s2 > 0.3 ? overEdge : null;
       L.orient = fretQ; L.ow = s1; L.hand = s1 > 0.5 ? HP.CHORDS[0] : HP.GRIP; R.orient = strumQ; R.ow = s2; R.hand = s2 > 0.4 ? HP.PICK : null; A.flick = 0;
       body.leanExtra = damp(body.leanExtra, 0.1, 4, dt); o.look = gPt(_actLook, 0, 0.95, 0.06);
@@ -4641,7 +4764,7 @@ function stepAct(dt, t, o) {   // o: { stand, gait, look, pitch }
         if (pt >= 2.9) go('point');
       } else if (A.phase === 'point') {   // and points at the record player
         const k = smooth(0, 0.45, pt) * (1 - smooth(1.6, 2.0, pt));
-        R.orient = blendQ(strumQ, pointQ, smooth(0, 0.7, k)); R.ow = 1; R.hp = _hpB.lerpVectors(HP_PINCH, HP_TIP_R, smooth(0, 0.7, k)); R.poleGet = k < 0.5 ? overEdge : null; R.pole.set(0.6, -0.9, 0.1); R.hand = k > 0.3 ? HP.POINT : HP.RELAX;
+        R.orient = blendQ(strumQ, pointQ, smooth(0, 0.7, k)); R.ow = 1; R.hp = _hpB.lerpVectors(HP_PINCH, HP_TIP_R, smooth(0, 0.7, k)); R.poleGet = k < 0.5 ? overEdge : null; R.pole.set(1, -0.3, 0.6); R.hand = k > 0.3 ? HP.POINT : HP.RELAX;
         R.get = (out) => { const sh = ch.arms.R.upper.getWorldPosition(_av3); return strum(out).lerp(_av.copy(DECK_PT).sub(sh).normalize().multiplyScalar(0.66).add(sh), k); };
         if (pt > 0.7 && !A.sent) { A.sent = true; catErrand(); }
         if (pt >= 2.0) go('waitErrand');
@@ -4654,7 +4777,7 @@ function stepAct(dt, t, o) {   // o: { stand, gait, look, pitch }
       o.stand = 0; body.pos.copy(ACT.SEAT_SIT); body.yaw = -Math.PI / 2; setGPose(G_PLAY, G_PLAY, 1); A.flick = 0;
       L.w = 1; L.get = fret; L.pole.set(-0.9, -0.7, 0.1); L.orient = fretQ; L.ow = 1; L.hand = HP.CHORDS[0];
       const up = smooth(0.05, 0.45, pt) * (1 - smooth(0.85, 1.25, pt));
-      R.w = 1; R.poleGet = up > 0.5 ? null : overEdge; R.pole.set(0.6, -0.9, 0.3); R.orient = blendQ(strumQ, pushQ, smooth(0, 0.7, up)); R.ow = 1; R.hp = _hpB.lerpVectors(HP_PINCH, HP_TIP_R, smooth(0, 0.7, up)); R.hand = up > 0.3 ? HP.POINT : HP.RELAX;
+      R.w = 1; R.poleGet = (out) => { const b = smooth(0.0, 0.3, up); overEdge(out).normalize().lerp(_gp1.set(1, 0.0, 0.3).applyAxisAngle(UP, body.yaw).normalize(), b); out.y += 0.5 * Math.sin(Math.PI * b); return out; };   // the elbow lifts off the guitar's edge and swings out to the side: over the instrument, not through it R.orient = blendQ(strumQ, pushQ, smooth(0, 0.7, up)); R.ow = 1; R.hp = _hpB.lerpVectors(HP_PINCH, HP_TIP_R, smooth(0, 0.7, up)); R.hand = up > 0.3 ? HP.POINT : HP.RELAX;
       R.get = (out) => strum(out).lerp(ch.head.localToWorld(_av.copy(FACE.bridge).add(_av3.set(0, -0.004, -0.012))), up);
       A.lift = smooth(0.35, 0.55, pt); A.quiz = smooth(0.5, 0.9, pt) * (1 - smooth(3.6, 4.1, pt));
       o.look = pt < 0.4 ? gPt(_actLook, 0, 0.95, 0.06) : pt < 4.0 ? _actLook.copy(camera.position) : gPt(_actLook, 0, 0.95, 0.06);
@@ -4664,17 +4787,20 @@ function stepAct(dt, t, o) {   // o: { stand, gait, look, pitch }
       break;
     }
     case 'rise2': {
-      const k = clamp(pt / 1.1, 0, 1), e = ease(k);
-      o.stand = e; body.pos.lerpVectors(ACT.SEAT_SIT, ACT.SEAT_STAND, e); body.yaw = -Math.PI / 2; setGPose(G_PLAY, G_CARRY, e);
-      const s1 = smooth(0, 0.8, k);
-      L.w = 1; L.get = (out) => fret(out).lerp(grip(_av2), s1);
-      R.get = (out) => strum(out).lerp(hangR(_av2), s1); R.w = 1 - smooth(0.85, 1, k);
-      L.orient = fretQ; L.ow = 1 - s1; L.hand = s1 > 0.5 ? HP.GRIP : HP.CHORDS[0]; R.orient = strumQ; R.ow = 1 - s1; R.hand = s1 < 0.6 ? HP.PICK : null;
-      if (k > 0.6) R.poleGet = null;
+      const k = clamp(pt / 2.0, 0, 1), kB = clamp(k / 0.58, 0, 1), e = ease(kB), kA = ease(clamp((k - 0.58) / 0.42, 0, 1));   // B: he gets up with the guitar held in front; A: it swings round to hang at his side
+      o.stand = e; body.pos.lerpVectors(ACT.SEAT_SIT, ACT.SEAT_STAND, e); body.yaw = -Math.PI / 2;
+      setGPose(G_PLAY, G_CARRY, kA); gArc(G_ARC, Math.sin(Math.PI * kA) * 1.8); gm.position.y += G_HOLD * smooth(0, 0.18, kB) * (1 - kA) + 0.07 * Math.sin(Math.PI * kA);   // out round the knee he may have stepped forward with
+      const s1 = smooth(0.5, 0.9, k), sR = smooth(0.58, 0.97, k);
+      L.w = 1; L.get = (out) => fret(out).lerp(grip(_av2), s1); L.pole.set(-0.9, -0.7, 0.1).lerp(_av.set(-0.35, -0.6, 0.75), s1);
+      if (k < 0.58) A.strum0 = ch.root.worldToLocal(strum(A.strum0 || new V3()));   // the strumming hand stays on the strings until he is up, then comes away out to the side (it does not chase the guitar across his body)
+      R.get = (out) => { ch.root.localToWorld(out.copy(A.strum0)).lerp(hangR(_av2), sR); return out.add(_av.set(0.12, 0.03, -0.05).multiplyScalar(Math.sin(Math.PI * sR)).applyAxisAngle(UP, body.yaw)); };
+      R.pole.set(0.9, -0.5, 0.5); R.w = 1 - smooth(0.92, 1, k);
+      L.orient = fretQ; L.ow = 1 - s1; L.hand = s1 > 0.5 ? HP.GRIP : HP.CHORDS[0]; R.orient = strumQ; R.ow = 1 - sR; R.hand = sR < 0.6 ? HP.PICK : null;
+      if (k > 0.5) R.poleGet = null;
       if (k >= 1) { R.w = 0; A.W = curveOf(ACT.toSeat, true); go('walk3'); }
       break;
     }
-    case 'walk3': L.w = 1; L.get = grip; L.pole.set(-0.7, -0.5, 0.6); if (pt > 1.2 && !A.catSent) { A.catSent = true; catBack(); } walk('face3'); break;
+    case 'walk3': L.w = 1; L.get = grip; L.pole.set(-0.35, -0.6, 0.75); if (pt > 1.2 && !A.catSent) { A.catSent = true; catBack(); } walk('face3'); break;
     case 'face3': L.w = 1; if (!A.catSent) { A.catSent = true; catBack(); } face(Math.PI / 2, 'place'); break;
     case 'place': {   // back onto the stand
       o.stand = 1; L.get = grip; o.look = grip(_actLook);
@@ -4684,7 +4810,7 @@ function stepAct(dt, t, o) {   // o: { stand, gait, look, pitch }
         const p = new V3(), q = new THREE.Quaternion(), s = new V3(); m.decompose(p, q, s); A.standLocal = { p, q }; A.carryFrom = { p: gm.position.clone(), q: gm.quaternion.clone() };
       }
       const k = ease(clamp(pt / 0.9, 0, 1)); body.leanExtra = 0.05 + Math.sin(Math.PI * k) * 0.27;
-      if (!A.placed) { setGPose(A.carryFrom, A.standLocal, k); L.w = 1; }
+      if (!A.placed) { setGPose(A.carryFrom, A.standLocal, k); gArc(G_ARC, Math.sin(Math.PI * k)); L.w = 1; }
       if (pt >= 0.9 && !A.placed) { A.placed = true; guitar.gt.attach(gm); gm.position.copy(guitar.homePos); gm.quaternion.copy(guitar.homeQuat); Sound.click(); }
       if (A.placed) L.w = 1 - ease(clamp((pt - 0.9) / 0.5, 0, 1));
       if (pt >= 1.4) { L.w = 0; A.W = curveOf(ACT.toGuitar, true); go('walk4'); }
@@ -4694,7 +4820,7 @@ function stepAct(dt, t, o) {   // o: { stand, gait, look, pitch }
     case 'face4': face(0, 'sitdown'); break;
     case 'sitdown': {   // back to the desk, pull the chair in
       const k = clamp(pt / 1.0, 0, 1);
-      o.stand = 1 - ease(k); body.pos.set(C.x, 0, lerp(0, C.z, ease(k))); body.chairZ = lerp(C.z + 0.34, C.z, ease(clamp((pt - 0.15) / 0.85, 0, 1))); body.leanExtra = Math.sin(Math.PI * k) * 0.3;
+      o.stand = 1 - ease(k); body.pos.set(C.x, 0, lerp(0.08, C.z, ease(k))); body.chairZ = lerp(C.z + 0.34, C.z, ease(clamp((pt - 0.15) / 0.85, 0, 1))); body.leanExtra = Math.sin(Math.PI * k) * 0.3;
       if (k >= 1) {
         act = null; body.leanExtra = 0; body.pos.copy(C); body.chairZ = C.z; L.w = R.w = 0;
         intro = { t: 0, from: camera.position.clone(), fromT: controls.target.clone(), dur: 1.6 };
@@ -4982,7 +5108,7 @@ function buildAuras() {
     const m = new THREE.Mesh(auraGeo, auraMat); m.matrixAutoUpdate = false; m.frustumCulled = false; zenScene.add(m);
     AURAS.push({ m, anchor, off: new THREE.Matrix4().compose(pos, new THREE.Quaternion(), scale) });
   };
-  add(ch.spine, new V3(0, 0.46, 0.02), new V3(0.42, 0.62, 0.34));   // one aura around Sina, head and body together
+  add(ch.spine, new V3(0, 0.4, 0.02), new V3(0.42, 0.6, 0.34));   // one aura around Sina, head and body together
   add(persian.torso, new V3(0, 0, 0), new V3(0.28, 0.15, 0.15));
   for (const p of PLANTS) add(null, p.c, p.r.clone().multiplyScalar(1.15));
 }
@@ -5012,7 +5138,7 @@ function buildLines() {
   const add = (curve, c1, c2, r = 0.006) => { const m = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(48, Math.round(curve.getLength() * 60)), r, 6, false), lineMat(c1, c2)); m.frustumCulled = false; zenScene.add(m); LINES.push(m); };
   const helix = (c, y0, y1, rx, rz, turns, ph) => { const pts = [], n = Math.ceil(turns * 18); for (let i = 0; i <= n; i++) { const u = i / n, a = ph + u * turns * Math.PI * 2, w = 0.88 + 0.12 * Math.sin(u * 9 + ph); pts.push(new V3(c.x + Math.cos(a) * rx * w, y0 + (y1 - y0) * u, c.z + Math.sin(a) * rz * w)); } return new THREE.CatmullRomCurve3(pts); };
   const arc = (a, b) => { const m = a.clone().add(b).multiplyScalar(0.5); m.y += 0.15 + a.distanceTo(b) * 0.22; return new THREE.QuadraticBezierCurve3(a.clone(), m, b.clone()); };
-  const sina = ch.spine.getWorldPosition(new V3()).add(new V3(0, 0.36, 0)), pers = persian.torso.getWorldPosition(new V3()).add(new V3(0, 0.07, 0));
+  const sina = ch.spine.getWorldPosition(new V3()).add(new V3(0, 0.3, 0)), pers = persian.torso.getWorldPosition(new V3()).add(new V3(0, 0.07, 0));
   const P = PLANTS.map(p => p.c);
   // inside each being
   add(helix(sina, sina.y - 0.32, sina.y + 0.62, 0.3, 0.26, 3, 0), ZC.red, ZC.orange);
@@ -5069,6 +5195,76 @@ let screenAcc = 0, rrIdx = 0, firstFrame = true, neonFlick = 0, neonNext = 16, l
 const kbL = new V3(-0.085, DESK_Y + 0.036, -0.33), kbR = new V3(0.085, DESK_Y + 0.036, -0.33);
 const _a = new V3(), _b = new V3(), _c = new V3(), _d = new V3(), _e = new V3(), _col = new THREE.Color(), _m4 = new THREE.Matrix4();
 const _frustum = new THREE.Frustum(), _pm = new THREE.Matrix4();
+// ---- walking, as a body does it: each foot stays planted on the floor until it is its turn to step, and the step lands where the hip is going to be,
+// half a stride on. The pelvis rides as high as the legs allow (so it dips in double support and rises over the planted foot), shifts over the standing leg,
+// drops a little on the swinging side and turns with the stride; the ribcage and arms turn back against it. Heel first, then the sole, then off the toes.
+const SIT_HIPS = 0.615, SIT_HIPS_SEAT = 0.61, STAND_HIPS = 0.935, LEG_REACH = (THIGH + SHIN) * 0.995;   // the window seat is a little higher than the desk chair
+const mkLeg = () => ({ plant: new V3(), foot: new V3(), swing: null, rel: 0, pitch: 0, yawOff: 0, heel: 0, peel: 0, yaw: 0 });
+const GAIT = { L: mkLeg(), R: mkLeg(), vel: new V3(), prev: new V3(), init: false, ds: 0, pelvisYaw: 0, sway: 0, roll: 0, last: 'R', walkK: 0, hipY: STAND_HIPS, prevSK: 1 };
+const _gN = new V3(), _gT = new V3(), _gH = new V3(), _gB = new V3();
+function stepFeet(dt, sK) {
+  const root = ch.root, G = GAIT;
+  root.getWorldPosition(_gH); _gH.y = 0;
+  if (!G.init || G.prev.distanceTo(_gH) > 0.4) { G.prev.copy(_gH); G.vel.set(0, 0, 0); G.init = false; }   // (re)placed somewhere: the feet go with him
+  _gT.subVectors(_gH, G.prev).divideScalar(Math.max(dt, 1e-3)); G.vel.lerp(_gT, 1 - Math.exp(-12 * dt)); G.prev.copy(_gH);
+  const v = Math.hypot(G.vel.x, G.vel.z), walking = v > 0.06;
+  G.walkK = damp(G.walkK, walking ? 1 : 0, 5, dt);
+  const Ts = walking ? clamp(0.6 - 0.16 * v, 0.42, 0.55) : 0.34, DS = walking ? 0.09 : 0.05, ahead = walking ? (Ts + DS) * 0.55 : 0;
+  const neutral = (s, out) => root.localToWorld(out.set(s * HIP_X * 1.08, ANKLE_Y, 0));
+  const seated = (s, out, z) => root.localToWorld(out.set(s * SIT_FOOT.x, ANKLE_Y, z));
+  const sitting = sK < 0.999 && sK < G.prevSK - 1e-5; G.prevSK = sK;   // on his way down onto a seat
+  G.ds = Math.max(0, G.ds - dt);
+  let swinging = null;
+  for (const k of ['L', 'R']) {
+    const g = G[k], s = k === 'L' ? -1 : 1; neutral(s, _gN);
+    if (!G.init || sK < 0.35) {   // seated: the feet rest out in front; as he gathers himself to rise they draw back under the knees
+      seated(s, _gN, lerp(SIT_FOOT.z, -0.26, smooth(0.02, 0.35, sK))); g.plant.copy(_gN); g.foot.copy(_gN); g.swing = null; g.pitch = 0; g.heel = 0; g.peel = 0; g.yaw = body.yaw; continue;
+    }
+    if (g.swing) {
+      const w = g.swing; w.u = Math.min(1, w.u + dt / w.dur); const e = w.u * w.u * (3 - 2 * w.u);
+      _gT.copy(_gN).addScaledVector(G.vel, (1 - w.u) * w.dur + ahead);   // where the hip will be when the foot lands, and a little on
+      g.foot.lerpVectors(w.from, _gT, e); g.foot.y = ANKLE_Y + Math.sin(Math.PI * Math.pow(w.u, 0.8)) * w.lift + w.y0 * (1 - w.u) * (1 - w.u);   // leaves the floor from wherever the heel had got to
+      g.pitch = lerp(Math.min(w.p0, -0.3), 0.22, smooth(0.0, 0.85, w.u)) * (1 - smooth(0.9, 1, w.u) * 0.4);   // off the toes, then the toes come up for the heel strike
+      g.peel = 0; g.yaw = w.yaw0 + wrapA(body.yaw - w.yaw0) * e;   // the foot turns to the new heading in the air
+      if (w.u >= 1) { g.plant.copy(_gT); g.plant.y = ANKLE_Y; g.swing = null; g.heel = walking ? 0.18 : 0.06; g.yaw = body.yaw; G.ds = DS; G.last = k; Sound.step(); }
+      else swinging = k;
+    } else {
+      if (sitting && sK < 0.75) { seated(s, _gT, -0.26); g.plant.lerp(_gT, 1 - Math.exp(-6 * dt)); }   // sitting down: the feet draw in to where they will rest
+      g.foot.copy(g.plant); g.heel = damp(g.heel, 0, 14, dt);   // after the heel strike the sole rolls flat
+      g.peel = damp(g.peel, walking ? smooth(0.1, 0.3, g.rel) * 0.5 : 0, 16, dt);   // late stance: the heel peels off the floor as the body passes over the foot
+      g.pitch = g.heel - g.peel; g.foot.y = ANKLE_Y + Math.sin(g.heel) * 0.05 + Math.sin(g.peel) * 0.13;
+    }
+  }
+  if (G.init && sK >= 0.35 && !sitting && !swinging && G.ds <= 0) {   // who steps next: the foot furthest from where it should be (the feet take turns while walking)
+    let best = null, bestErr = 0;
+    for (const k of ['L', 'R']) {
+      const g = G[k], s = k === 'L' ? -1 : 1; neutral(s, _gN); _gT.copy(_gN).addScaledVector(G.vel, ahead);
+      const turned = Math.abs(wrapA(g.yaw - body.yaw)), err = Math.hypot(g.plant.x - _gT.x, g.plant.z - _gT.z) + turned * 0.12, thr = walking ? Math.max(0.05, v * (Ts + DS) * 0.5) : 0.085;
+      if ((err > thr || turned > 0.28) && (err > bestErr || !best) && !(walking && k === G.last && err < thr * 2.5)) { best = k; bestErr = err; }
+    }
+    if (best) { const g = G[best]; g.swing = { from: g.plant.clone(), yaw0: g.yaw, p0: g.pitch, y0: g.foot.y - ANKLE_Y, u: 0, dur: Ts, lift: walking ? 0.05 + 0.03 * Math.min(1, v) : 0.03 }; swinging = best; }
+  }
+  root.getWorldDirection(_gB).negate(); _gB.y = 0; _gB.normalize();   // the way he faces (-z local)
+  for (const k of ['L', 'R']) {
+    const g = G[k], s = k === 'L' ? -1 : 1; neutral(s, _gN);
+    g.rel = -(_gT.subVectors(g.foot, _gN).dot(_gB));   // + = behind the hip
+    g.yawOff = sK < 0.35 ? 0 : clamp(wrapA(g.yaw - body.yaw), -0.9, 0.9);   // a planted foot keeps pointing where it was put down
+  }
+  G.init = true;
+  const sw = swinging ? G[swinging].swing : null, su = sw ? Math.sin(Math.PI * sw.u) : 0, ss = swinging === 'L' ? -1 : swinging === 'R' ? 1 : 0;
+  G.sway = damp(G.sway, -ss * 0.022 * su * Math.min(1, v * 2 + 0.3), 10, dt);                               // over the standing leg
+  G.roll = damp(G.roll, -ss * 0.045 * su, 10, dt);                                                          // the swinging side drops
+  G.pelvisYaw = damp(G.pelvisYaw, clamp((G.L.rel - G.R.rel) * 0.22, -0.11, 0.11) * G.walkK, 10, dt) * sK;   // the hip goes forward with its leg
+  let hipY = STAND_HIPS;
+  for (const k of ['L', 'R']) {
+    const g = G[k], s = k === 'L' ? -1 : 1; root.localToWorld(_gN.set(s * HIP_X + G.sway, 0, 0));
+    const h = Math.hypot(g.foot.x - _gN.x, g.foot.z - _gN.z); hipY = Math.min(hipY, g.foot.y + Math.sqrt(Math.max(0.05, LEG_REACH * LEG_REACH - h * h)) + 0.02);
+  }
+  G.hipY = damp(G.hipY, hipY, 22, dt);
+  ch.hips.position.set(G.sway * sK, lerp(act ? SIT_HIPS_SEAT : SIT_HIPS, G.hipY, sK), 0);
+  ch.hips.rotation.set(0, G.pelvisYaw, G.roll * sK);
+}
+const TORSO = { lean: 0, twist: 0 }, HEADQ = { yaw: 0, pitch: 0 };   // the bend of the whole back: shared between the lumbar and thoracic joints
 const _ovP = new V3(), _ovQ = new V3(), _ovW = new V3(), _ovH = new THREE.Quaternion(), _ovF = new THREE.Quaternion(), _qI = new THREE.Quaternion(), SIT_FOOT = new V3(0.12, 0.07, -0.43), STAND_FOOT = new V3(0.1, 0.065, 0.0), FWD_LOOK = new V3(0, 1.36, -1.2), MUG_LOOK = MUG_HOME.clone().add(new V3(0, 0.05, 0));
 const handOv = new V3(), lookOv = new V3();
 const cityBase = new THREE.Color(0.85, 0.85, 0.9);
@@ -5296,12 +5492,12 @@ function frame() {
     const T = sq.t;
     if (sq.phase === 'rise') {
       const k = clamp(T / 1.0, 0, 1);
-      standTarget = ease(k); body.pos.z = lerp(C.z, 0.0, ease(k)); body.chairZ = lerp(C.z, C.z + 0.34, ease(clamp(T / 0.7, 0, 1))); body.leanExtra = Math.sin(Math.PI * k) * 0.42;
+      standTarget = ease(k); body.pos.z = lerp(C.z, 0.08, ease(k)); body.chairZ = lerp(C.z, C.z + 0.34, ease(clamp(T / 0.7, 0, 1))); body.leanExtra = Math.sin(Math.PI * k) * 0.42;
       if (k >= 1) sq.phase = 'walk';
     } else if (sq.phase === 'walk') {
       standTarget = 1; body.leanExtra = 0.05;
       const remaining = sq.len - sq.s;
-      sq.speed = Math.min(remaining < 0.35 ? Math.max(0.3, remaining * 2.2) : 0.85, sq.speed + dt * 1.8);
+      sq.speed = Math.min(remaining < 0.4 ? Math.max(0.1, remaining * 2.1) : 0.85, sq.speed + dt * 1.8);
       sq.s = Math.min(sq.len, sq.s + sq.speed * dt);
       const u = sq.len > 0 ? sq.s / sq.len : 1, p = sq.curve.getPointAt(clamp(u, 0, 1)), tn = sq.curve.getTangentAt(clamp(u, 0, 1));
       body.pos.set(p.x, 0, p.z); body.yaw = dampAngle(body.yaw, Math.atan2(-tn.x, -tn.z), 7, dt);
@@ -5340,11 +5536,11 @@ function frame() {
   } else slide = damp(slide, 0, 4, dt);
   slideX = damp(slideX, sq && sq.kind === 'note' ? 0.22 : 0, 3.2, dt);   // roll the chair over to the notebook
   chair.position.z = body.chairZ - (sq && sq.kind === 'screen' ? slide : 0); chair.position.x = C.x - slideX;
-  const sK = body.standK, bob = body.gait * 0.022 * Math.abs(Math.sin(body.phase));
+  const sK = body.standK;
   ch.root.position.set(body.pos.x - slideX, 0, body.pos.z - (sq && sq.kind === 'screen' ? slide : 0));
   ch.root.rotation.y = body.yaw;
-  ch.hips.position.y = lerp(0.56, 0.92, sK) - bob;
-  ch.hips.rotation.y = Math.sin(body.phase) * 0.08 * body.gait;
+  ch.root.updateMatrixWorld(true);
+  stepFeet(dt, sK);
 
   let look;
   if (lookOverride) look = lookOverride;
@@ -5354,37 +5550,39 @@ function frame() {
   else look = _c.set(Math.sin(t * 0.37) * 0.55 + Math.sin(t * 0.13) * 0.2, 1.15 + Math.sin(t * 0.71) * 0.06, -0.6);
   lookSm.lerp(look, 1 - Math.exp(-(sq ? 9 : 6) * dt));
   const breath = Math.sin(t * 1.6);
-  ch.spine.position.y = 0.02 + breath * 0.004;
-  ch.chest.scale.set(1.2 * (1 + breath * 0.012), 1, 0.8 * (1 + breath * 0.022));
+  ch.ribs.scale.set(1 + breath * 0.014, 1 + breath * 0.006, 1 + breath * 0.03); ch.ribs.position.y = 0.1 + breath * 0.003;   // breathing: the front of the ribcage swells and lifts
   ch.root.updateMatrixWorld(true);
   const headW = ch.neck.getWorldPosition(_a).add(_b.set(0, 0.16, 0));
   const vLocal = ch.root.worldToLocal(_b.copy(lookSm)).sub(ch.root.worldToLocal(_c.copy(headW)));
   let yawL = clamp(Math.atan2(-vLocal.x, -vLocal.z), sK > 0.5 ? -0.8 : -0.55, sK > 0.5 ? 0.8 : 0.55);
   const nod = (playing && !sq && !act ? bounce * 0.07 : 0) + (PHONES.on && !act ? Math.max(0, Math.sin(t * Math.PI * 2 * 0.72)) * 0.06 : 0);
   const pitch = clamp(Math.atan2(vLocal.y, Math.hypot(vLocal.x, vLocal.z)), -0.75, 0.6) + headPitchAdd - nod;
-  const leanT = (sq && sq.kind === 'screen' ? 0.12 * reachK + sq.lean : sq && sq.kind === 'note' ? 0.22 : sq && sq.kind === 'coffee' ? 0.08 : 0.04 + Math.sin(t * 0.4) * 0.015) * (1 - sK) + sK * 0.03 + body.leanExtra;
-  const twistT = yawL * 0.22 * (1 - sK * 0.5) + (sq && sq.kind === 'screen' ? -sq.arm.side * 0.22 * reachK : sq && sq.kind === 'note' ? 0.3 : 0) - Math.sin(body.phase) * 0.06 * body.gait;
-  ch.spine.rotation.x = damp(ch.spine.rotation.x, -leanT, 6, dt);
-  ch.spine.rotation.y = damp(ch.spine.rotation.y, twistT, 5, dt);
-  ch.head.rotation.y = damp(ch.head.rotation.y, yawL - ch.spine.rotation.y, 8, dt);
-  ch.head.rotation.x = damp(ch.head.rotation.x, pitch - ch.spine.rotation.x, 8, dt);
+  const leanT = (sq && sq.kind === 'screen' ? 0.12 * reachK + sq.lean : sq && sq.kind === 'note' ? 0.22 : sq && sq.kind === 'coffee' ? 0.08 : 0.04 + Math.sin(t * 0.4) * 0.015) * (1 - sK) + sK * (0.02 + 0.05 * GAIT.walkK) + body.leanExtra;   // walking, he leans into it a little
+  const twistT = yawL * 0.22 * (1 - sK * 0.5) + (sq && sq.kind === 'screen' ? -sq.arm.side * 0.22 * reachK : sq && sq.kind === 'note' ? 0.3 : 0) - GAIT.pelvisYaw * 1.7;   // the shoulders swing against the pelvis
+  TORSO.lean = damp(TORSO.lean, -leanT, 6, dt); TORSO.twist = damp(TORSO.twist, twistT, 5, dt);
+  ch.spine.rotation.x = TORSO.lean * 0.55; ch.chest.rotation.x = TORSO.lean * 0.45;     // the back bends at the waist and again under the ribs
+  ch.spine.rotation.y = TORSO.twist * 0.4; ch.chest.rotation.y = TORSO.twist * 0.6;     // and twists mostly in the ribcage
+  HEADQ.yaw = damp(HEADQ.yaw, yawL - TORSO.twist, 8, dt); HEADQ.pitch = damp(HEADQ.pitch, pitch - TORSO.lean, 8, dt);
+  ch.neck.rotation.y = HEADQ.yaw * 0.35; ch.neck.rotation.x = HEADQ.pitch * 0.35;         // the neck takes a third of every look, the skull the rest
+  ch.head.rotation.y = HEADQ.yaw * 0.65; ch.head.rotation.x = HEADQ.pitch * 0.65;
   { const huh = act && act.phase === 'huh'; FACE.quiz = damp(FACE.quiz, huh ? act.quiz || 0 : 0, 7, dt); FACE.lift = damp(FACE.lift, huh ? act.lift || 0 : 0, huh ? 12 : 0.6, dt); }
   ch.head.rotation.z = Math.sin(t * 0.6) * 0.025 + FACE.quiz * 0.13;
   for (const b of FACE.brows) { const up = b.s < 0; b.m.position.y = b.y + (up ? 0.009 : 0.002) * FACE.quiz; b.m.rotation.z = b.rz + (up ? -0.12 : 0.42) * FACE.quiz; }
   for (const l of FACE.lips) { l.m.rotation.z = Math.PI / 2 + 0.22 * FACE.quiz; l.m.position.x = 0.004 * FACE.quiz; l.m.position.y = l.y + 0.0015 * FACE.quiz; }   // a crooked 'hmm'
   FACE.glasses.position.y = FACE.lift * 0.005;
-  chair.rotation.y = act ? chair.rotation.y : (Math.sin(t * 0.3) * 0.03 + ch.spine.rotation.y * 0.25) * (1 - sK);
+  chair.rotation.y = act ? chair.rotation.y : (Math.sin(t * 0.3) * 0.03 + TORSO.twist * 0.25) * (1 - sK);
   ch.root.updateMatrixWorld(true);
   for (const k of ['L', 'R']) {
-    const leg = ch.legs[k], s = leg.side, ph = body.phase + (k === 'L' ? 0 : Math.PI);
-    const stride = 0.17 * body.gait, fz = -stride * Math.sin(ph), lift = Math.max(0, Math.cos(ph)) * 0.085 * body.gait;
-    _a.set(lerp(s * SIT_FOOT.x, s * STAND_FOOT.x, sK), lerp(SIT_FOOT.y, STAND_FOOT.y + lift, sK), lerp(SIT_FOOT.z, STAND_FOOT.z + fz, sK));
-    leg.tgt.copy(ch.root.localToWorld(_a));
+    const leg = ch.legs[k], s = leg.side, G = GAIT[k];
+    leg.tgt.copy(G.foot);   // seated or standing, the gait knows where each foot is
     leg.pole.set(0, lerp(0.45, 0.0, sK), -1).applyAxisAngle(UP, body.yaw).add(_b.set(s * 0.12, 0, 0).applyAxisAngle(UP, body.yaw));
     solveLimb(leg.upper, leg.lower, THIGH, SHIN, leg.tgt, leg.pole);
-    orientFoot(leg.foot, body.yaw, -lift * 2.2);
+    orientFoot(leg.foot, body.yaw + G.yawOff, G.pitch * sK);
   }
-  if (body.gait > 0.3) { const st = Math.floor(body.phase / Math.PI); if (st !== stepSide) { stepSide = st; Sound.step(); } }
+  {   // the lap: how far both thighs are folded forward at the hips (the smaller of the two), eased
+    let f = 9; for (const k of ['L', 'R']) { const L = ch.legs[k]; _a.copy(L.lower.position).applyQuaternion(L.upper.quaternion); f = Math.min(f, Math.atan2(-_a.z, -_a.y)); }   // the thigh's direction in the pelvis' own frame
+    ch.lap.rotation.x = damp(ch.lap.rotation.x, clamp(f, 0, 1.75), 18, dt);
+  }
   ch.root.updateMatrixWorld(true);
   rightModeT -= dt; if (rightModeT <= 0) { rightMode = rightMode === 'type' ? 'mouse' : 'type'; rightModeT = rightMode === 'type' ? rand(5, 9) : rand(2.5, 4.5); }
   const typingAmt = smooth(0.2, 0.6, Math.sin(t * 0.55) * 0.5 + 0.5);
@@ -5405,8 +5603,9 @@ function frame() {
     if (k === 'R' && sq && sq.kind === 'note') idle = _a.set(0.06 - slideX, DESK_Y + 0.032, -0.26);   // free hand rests on the desk
     if (sK > 0.01) {
       arm.upper.getWorldPosition(_b);
-      const swing = (k === 'L' ? 1 : -1) * Math.sin(body.phase) * 0.13 * body.gait;
-      _c.set(s * 0.06, -0.56, swing - 0.03).applyAxisAngle(UP, body.yaw).add(_b); idle.lerp(_c, sK);
+      const swing = clamp(-0.7 * GAIT[k].rel, -0.2, 0.15) * GAIT.walkK, fwd = Math.max(0, -swing);   // the arm swings with the opposite leg; going forward the elbow bends a little more
+      _c.set(s * 0.032, -0.69 + fwd * 0.2, swing - 0.01).applyAxisAngle(UP, body.yaw).add(_b); idle.lerp(_c, sK);
+      if (sK < 0.99) idle.y += Math.sin(Math.PI * Math.min(1, sK * 1.6)) * 0.09;   // getting up: off the keyboard first, clear of the desk's edge
     }
     const pole = arm.pole.set(s * 0.8, -0.6, 0.55);
     if (sK > 0.01) pole.lerp(_b.set(s * 0.4, -0.2, 1).applyAxisAngle(UP, body.yaw), sK);
@@ -5421,8 +5620,21 @@ function frame() {
         ow = ov.ow * ov.w; ov.orient(_ovH); arm.tgt.lerp(_ovP.sub(_ovW.copy(ov.hp).applyQuaternion(_ovH)), ow); reach = FORE + HAND_LEN * (1 - ow);
       }
     } else { arm.tgt.copy(idle); if (tap > 0.95 && !sq) keyHeat(k, t, f); }
+    {   // the collarbone follows the reach: the shoulder lifts for a hand above it and comes forward for a hand far in front
+      ch.chest.worldToLocal(_ovW.copy(arm.tgt)); const e = smooth(-0.12, 0.3, _ovW.y - SHOULDER.y), f = smooth(0.3, 0.62, -_ovW.z);
+      arm.clav.rotation.z = damp(arm.clav.rotation.z, s * (0.3 * e + 0.05 * f), 9, dt); arm.clav.rotation.y = damp(arm.clav.rotation.y, s * 0.3 * f, 9, dt);
+      arm.clav.updateMatrixWorld(true);
+    }
     solveLimb(arm.upper, arm.fore, UPPER, reach, arm.tgt, pole);
-    if (ow > 0) { arm.fore.getWorldQuaternion(_ovF).invert(); arm.hand.quaternion.slerpQuaternions(_qI, _ovF.multiply(_ovH), ow); } else arm.hand.quaternion.identity();
+    if (ow > 0) { arm.fore.getWorldQuaternion(_ovF).invert(); arm.hand.quaternion.slerpQuaternions(_qI, _ovF.multiply(_ovH), ow); }
+    else {   // a hand hanging at his side turns its palm in towards the thigh (and a little back), whichever way he faces
+      const hang = busy ? 0 : sK * (1 - ov.w);
+      if (hang > 0.01) {
+        const cy = Math.cos(body.yaw), sy = Math.sin(body.yaw);
+        _ovW.set(-s * cy + 0.35 * sy, 0, s * sy + 0.35 * cy); arm.fore.getWorldQuaternion(_ovF).invert(); _ovW.applyQuaternion(_ovF);
+        arm.hand.quaternion.setFromAxisAngle(UP, Math.atan2(_ovW.x, _ovW.z) * hang);
+      } else arm.hand.quaternion.identity();
+    }
     poseHand(arm, busy ? (sq.kind === 'coffee' ? HP.GRIP : sq.kind === 'note' ? HP.PICK : HP.POINT) : ov.w > 0.3 && ov.hand ? ov.hand : sK > 0.5 || (k === 'R' && rightMode === 'mouse' && !sq && !act) ? HP.RELAX : HP.TYPE, dt);
   }
 
