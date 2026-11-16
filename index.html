@@ -244,6 +244,7 @@
   <button data-id="coffee"><i style="background:#d9924a"></i>Coffee</button>
   <button data-id="mail"><i style="background:#8fbaff"></i>Email</button>
   <button data-id="lofi" id="dockLofi"><i style="background:#f2c46d"></i>Lo-fi</button>
+  <button data-id="kitchen"><i style="background:#d9b38c"></i>Kitchen</button>
 </nav>
 <div id="shelfUI" class="ui"><div class="panel">
   <div class="head"><div><b id="shelfTitle">Repositories</b> <span id="shelfHint"></span></div><div class="hb"><button id="shelfSide">Door &amp; mailbox →</button><button id="shelfBack">← Room</button></div></div>
@@ -396,6 +397,11 @@ const ACTIONS = {
   library: { label: 'Library', host: 'GitHub’s best-known repositories', c1: '#c4a46a' },
   rose: { label: 'Rose under glass', host: 'listen closely', c1: '#ff5a6e' },
   cabinet: { label: 'Record cabinet', host: 'take a closer look', c1: '#e3b178' },
+  kitchen: { label: 'Kitchen', host: 'coffee, tea…', c1: '#d9b38c' },
+  espresso: { label: 'Espresso machine', host: 'make a coffee', c1: '#c8a27a' },
+  stove: { label: 'Tea on the stove', host: 'pour a glass of tea', c1: '#e0864a' },
+  fridge: { label: 'Fridge', host: 'open it', c1: '#e9dfc8' },
+  klamp: { label: 'Kitchen lamp', host: 'switch on / off', c1: '#ffbf7a' },
 };
 const DOCK = ['github', 'telegram', 'gems', 'repos', 'window', 'door', 'mailbox', 'coffee', 'mail', 'lofi'];
 const SITE = (() => {   // on GitHub Pages the owner, repo and address come from the URL itself; elsewhere these defaults
@@ -845,10 +851,10 @@ CARD.face = CARD.x + CARD.t;
 const SLOT = { z: MBOX.z, y: 1.02, w: 0.3, h: 0.036 };   // straight through the wall, into the letterbox
 {
   const fw = ROOM.x * 2, fd = ROOM.front - ROOM.back, zc = (ROOM.front + ROOM.back) / 2;
-  const floor = mk(new THREE.PlaneGeometry(fw, fd), M('#ffffff', { map: TEX.floor, normalMap: TEX.floorN, normalScale: new THREE.Vector2(0.55, 0.55), roughness: 0.56 }), 0, 0, zc, scene, false); floor.rotation.x = -Math.PI / 2;
+  // the floor runs on under the kitchen nook
+  const floor = mk(new THREE.PlaneGeometry(fw, fd + 0.72), M('#ffffff', { map: TEX.floor, normalMap: TEX.floorN, normalScale: new THREE.Vector2(0.55, 0.55), roughness: 0.56 }), 0, 0, zc + 0.36, scene, false); floor.rotation.x = -Math.PI / 2;
   const ceil = mk(new THREE.PlaneGeometry(fw, fd), MAT.ceiling, 0, ROOM.h, zc, scene, false); ceil.rotation.x = Math.PI / 2;
   mk(new THREE.BoxGeometry(fw + 0.2, ROOM.h, 0.1), MAT.wall, 0, ROOM.h / 2, ROOM.back - 0.05, scene, false);
-  mk(new THREE.BoxGeometry(fw + 0.2, ROOM.h, 0.1), MAT.wall, 0, ROOM.h / 2, ROOM.front + 0.05, scene, false);
   const rw = (z0, z1, y0, y1) => {   // right wall pieces around the doorway; plaster mapped as if it were one wall
     const g = new THREE.BoxGeometry(0.1, y1 - y0, z1 - z0); g.translate(ROOM.x + 0.05, (y0 + y1) / 2, (z0 + z1) / 2);
     const p = g.attributes.position, n = g.attributes.normal, uv = g.attributes.uv;
@@ -858,13 +864,13 @@ const SLOT = { z: MBOX.z, y: 1.02, w: 0.3, h: 0.036 };   // straight through the
     }
     mk(g, MAT.wall, 0, 0, 0, scene, false);
   };
-  rw(ROOM.back, DOOR.z0, 0, ROOM.h); rw(DOOR.z1, ROOM.front, 0, ROOM.h); rw(DOOR.z0, DOOR.z1, DOOR.top, ROOM.h);
+  rw(ROOM.back, DOOR.z0, 0, ROOM.h); rw(DOOR.z1, ROOM.front + 0.8, 0, ROOM.h); rw(DOOR.z0, DOOR.z1, DOOR.top, ROOM.h);
   const lx = -ROOM.x - 0.05;
   const piece = (y0, y1, z0, z1) => mk(new THREE.BoxGeometry(0.1, y1 - y0, z1 - z0), MAT.wall, lx, (y0 + y1) / 2, (z0 + z1) / 2, scene, false);
   piece(0, WIN.y0, ROOM.back, ROOM.front); piece(WIN.y1, ROOM.h, ROOM.back, ROOM.front); piece(WIN.y0, WIN.y1, ROOM.back, WIN.z0); piece(WIN.y0, WIN.y1, WIN.z1, ROOM.front);
   // baseboards + crown
   mk(new THREE.BoxGeometry(fw, 0.09, 0.016), MAT.trim, 0, 0.045, ROOM.back + 0.008, scene, false);
-  for (const [a, b] of [[ROOM.back, DOOR.z0 - 0.07], [DOOR.z1 + 0.07, ROOM.front]]) mk(new THREE.BoxGeometry(0.016, 0.09, b - a), MAT.trim, ROOM.x - 0.008, 0.045, (a + b) / 2, scene, false);
+  for (const [a, b] of [[ROOM.back, DOOR.z0 - 0.07], [DOOR.z1 + 0.07, ROOM.front + 0.7]]) mk(new THREE.BoxGeometry(0.016, 0.09, b - a), MAT.trim, ROOM.x - 0.008, 0.045, (a + b) / 2, scene, false);
   mk(new THREE.BoxGeometry(0.016, 0.09, fd), MAT.trim, -ROOM.x + 0.008, 0.045, zc, scene, false);
   mk(new THREE.BoxGeometry(fw, 0.05, 0.03), MAT.trim, 0, ROOM.h - 0.025, ROOM.back + 0.015, scene, false);
   mk(new THREE.BoxGeometry(0.03, 0.05, fd), MAT.trim, ROOM.x - 0.015, ROOM.h - 0.025, zc, scene, false);
@@ -978,9 +984,9 @@ function candleProxy(parent, x, y0, z, h) {
 }
 {
   const X = -ROOM.x, zc = (WIN.z0 + WIN.z1) / 2, yc = (WIN.y0 + WIN.y1) / 2, fm = MAT.trim;
-  mk(new THREE.BoxGeometry(0.12, 0.05, WIN.z1 - WIN.z0 + 0.1), fm, X + 0.01, WIN.y1 + 0.025, zc, scene);
-  mk(new THREE.BoxGeometry(0.12, WIN.y1 - WIN.y0, 0.05), fm, X + 0.01, yc, WIN.z0 - 0.025, scene);
-  mk(new THREE.BoxGeometry(0.12, WIN.y1 - WIN.y0, 0.05), fm, X + 0.01, yc, WIN.z1 + 0.025, scene);
+  mk(new THREE.BoxGeometry(0.124, 0.054, WIN.z1 - WIN.z0 + 0.1), fm, X + 0.01, WIN.y1 + 0.025, zc, scene);
+  mk(new THREE.BoxGeometry(0.124, WIN.y1 - WIN.y0, 0.054), fm, X + 0.01, yc, WIN.z0 - 0.025, scene);
+  mk(new THREE.BoxGeometry(0.124, WIN.y1 - WIN.y0, 0.054), fm, X + 0.01, yc, WIN.z1 + 0.025, scene);
   mk(new THREE.BoxGeometry(0.05, WIN.y1 - WIN.y0, 0.035), fm, X - 0.03, yc, zc, scene, false);
   mk(new THREE.BoxGeometry(0.05, 0.035, WIN.z1 - WIN.z0), fm, X - 0.03, yc + 0.2, zc, scene, false);
   const glassMat = new THREE.ShaderMaterial({
@@ -1744,8 +1750,10 @@ const persian = (() => {
 const MONSTERA = new V3(-1.28, 0, -0.62);
 {
   const g = new THREE.Group(); g.position.copy(MONSTERA); scene.add(g);
-  mk(new THREE.CylinderGeometry(0.17, 0.13, 0.34, 32), M('#c9b8a0', { roughness: 0.85, map: TEX.jute }), 0, 0.17, 0, g);
-  mk(new THREE.CylinderGeometry(0.16, 0.16, 0.02, 32), MAT.soil, 0, 0.33, 0, g, false);
+  mk(new THREE.CylinderGeometry(0.17, 0.13, 0.34, 32, 1, true), M('#c9b8a0', { roughness: 0.85, map: TEX.jute }), 0, 0.17, 0, g);
+  mk(new THREE.CylinderGeometry(0.158, 0.125, 0.33, 32, 1, true), M('#8a7a64', { roughness: 0.95, side: THREE.BackSide }), 0, 0.175, 0, g, false);
+  mk(new THREE.TorusGeometry(0.164, 0.007, 8, 40), M('#c9b8a0', { roughness: 0.85 }), 0, 0.338, 0, g, false).rotation.x = Math.PI / 2;
+  mk(new THREE.CircleGeometry(0.157, 32), MAT.soil, 0, 0.3, 0, g, false).rotation.x = -Math.PI / 2;
   // leaf = a finely subdivided curved plane with the outline + holes cut out by the texture's alpha,
   // so the cupped surface shades smoothly from every angle (a bare ShapeGeometry has no inner vertices and facets badly)
   const leafMap = canvasTex(cvs(512, 512, (c, S) => {
@@ -2881,7 +2889,7 @@ const ch = (() => {
     const mix2 = (a, b, k) => [[a, 1 - k], [b, k]];
     const H = at(hips).y, Sp = at(spine).y, Ch = at(chest).y, Sh = at(arms.R.upper).y, Nk = at(neck).y;
     // ---- hoodie: ribbed hem on the hips, a waist, the ribcage (it breathes), shoulders sloping up to the collar ----
-    const girdle = (x, z, k) => { const a = Math.abs(x), g = smooth(0.07, 0.16, a) * k, cl = x < 0 ? arms.L.clav : arms.R.clav; return [[chest, 1 - g], [cl, g]]; };   // the shoulder slope follows the collarbone
+    const girdle = (x, z, k, u = 0) => { const a = Math.abs(x), g = smooth(0.07, 0.16, a) * k, A = x < 0 ? arms.L : arms.R, uu = u * smooth(0.12, 0.165, a); return [[chest, 1 - g], [A.clav, g * (1 - uu)], [A.upper, g * uu]]; };   // the shoulder slope follows the collarbone
     const rib = (x, z, k) => { const f = smooth(0.03, -0.06, z) * k; return [[chest, 1 - f], [ribs, f]]; };                                                       // only the front of the ribcage breathes
     const KH = (y) => 1 - smooth(H - 0.06, H + 0.11, y);   // how much of the thigh's swing reaches this height: all of it at the hem, none by the waist
     const lap = (x, z, k, base) => { const t = k * smooth(0.02, -0.06, z); return base.map(([b, w]) => [b, w * (1 - t)]).concat([[lapB, t]]); };   // the front of the hip region folds with the lap bone (hoodie skirt and trouser top alike, so the two layers always move together)
@@ -2896,9 +2904,10 @@ const ch = (() => {
       [Ch + 0.01, 0, -0.006, 0.153, 0.114, 0.102, 2.35, mix2(spine, chest, 0.65)],          // lower ribs
       [Ch + 0.075, 0, -0.01, 0.16, 0.122, 0.108, 2.4, (x, z) => rib(x, z, 0.75)],           // the chest
       [Ch + 0.14, 0, -0.01, 0.164, 0.122, 0.112, 2.4, (x, z) => rib(x, z, 0.6)],            // armpit level
-      [Sh - 0.035, 0, -0.006, 0.164, 0.113, 0.113, 2.3, (x, z) => girdle(x, z, 0.35)],
-      [Sh + 0.006, 0, 0.0, 0.158, 0.1, 0.108, 2.15, (x, z) => girdle(x, z, 0.6)],           // over the shoulder joints
-      [Sh + 0.034, 0, 0.006, 0.136, 0.086, 0.1, 2.05, (x, z) => girdle(x, z, 0.6)],         // the trapezius slope
+      [Sh - 0.035, 0, -0.006, 0.162, 0.113, 0.113, 2.3, (x, z) => girdle(x, z, 0.35, 0.3)],
+      [Sh + 0.002, 0, 0.0, 0.152, 0.1, 0.108, 2.15, (x, z) => girdle(x, z, 0.6, 0.4)],      // over the shoulder joints, tucked inside the sleeve's cap
+      [Sh + 0.02, 0, 0.003, 0.145, 0.093, 0.104, 2.1, (x, z) => girdle(x, z, 0.6, 0.25)],   // its rounded edge
+      [Sh + 0.036, 0, 0.006, 0.132, 0.086, 0.1, 2.05, (x, z) => girdle(x, z, 0.6)],         // the trapezius slope
       [Sh + 0.056, 0, 0.012, 0.102, 0.072, 0.09, 2.0, (x, z) => girdle(x, z, 0.3)],
       [Nk + 0.004, 0, 0.016, 0.074, 0.06, 0.074, 2, [[chest, 1]]],                          // into the collar
       [Nk + 0.02, 0, 0.018, 0.064, 0.054, 0.066, 2, [[chest, 1]]],
@@ -2909,10 +2918,11 @@ const ch = (() => {
       const el = (y) => mix2(A.upper, A.fore, smooth(E + 0.075, E - 0.075, y));   // a soft, full elbow
       // ---- sleeve: the cap over the deltoid, biceps, a full elbow, the forearm's taper into the cuff ----
       loft([
-        [Sh + 0.05, sx - sd * 0.046, 0.004, 0.003, 0.004, 0.004, 2, [[A.clav, 0.6], [A.upper, 0.4]]],          // closed over the top of the shoulder
-        [Sh + 0.04, sx - sd * 0.04, 0.004, 0.036, 0.044, 0.046, 2, [[A.clav, 0.6], [A.upper, 0.4]]],
-        [Sh + 0.03, sx - sd * 0.012, 0.004, 0.05, 0.054, 0.056, 2, [[A.clav, 0.35], [A.upper, 0.65]]],
-        [Sh + 0.006, sx - sd * 0.002, 0.003, 0.058, 0.059, 0.061, 2, [[A.clav, 0.12], [A.upper, 0.88]]],      // the deltoid
+        ...[90, 82, 72, 60, 45, 30, 15].map(d => {   // the deltoid's dome: outer edge on an elliptical arc from the joint up and in to the acromion, closed at the top
+          const th = d * Math.PI / 180, c = Math.cos(th), sn = Math.sin(th), o = 0.058 - 0.106 * (1 - c), i = d === 90 ? o - 0.004 : -0.058 - 0.02 * sn, rz = 0.002 + 0.058 * Math.pow(c, 0.75), k = 0.14 + 0.24 * sn * sn;   // the dome turns with the arm as one piece (an uneven blend across rings this close together folds it into a lip)
+          return [Sh - 0.004 + 0.05 * sn, sx + sd * (o + i) / 2, 0.004, (o - i) / 2, rz, rz + 0.002 * c, 2, [[A.clav, k], [A.upper, 1 - k]]];
+        }),
+        [Sh - 0.004, sx, 0.003, 0.058, 0.059, 0.061, 2, [[A.clav, 0.12], [A.upper, 0.88]]],                    // the deltoid at its widest
         [Sh - 0.04, sx, 0.002, 0.058, 0.058, 0.06, 2, [[A.upper, 1]]],
         [Sh - 0.11, sx, 0, 0.054, 0.056, 0.055, 2, [[A.upper, 1]]],                                          // biceps / triceps
         [Sh - 0.19, sx, 0, 0.05, 0.051, 0.052, 2, el(Sh - 0.19)],
@@ -2972,6 +2982,239 @@ function solveLimb(upper, lower, a, b, target, pole) {
   setWorldDir(lower, _tmp.subVectors(_tip, _E).normalize());
 }
 function orientFoot(foot, yaw, pitch) { _q.setFromEuler(_eul.set(pitch, yaw, 0, 'YXZ')); foot.parent.getWorldQuaternion(_pq); foot.quaternion.copy(_pq.invert().multiply(_q)); }
+
+await tick('PUTTING THE KETTLE ON');
+/* =====================================================================
+   KITCHEN: the wall behind Sina came down. In its place, a small kitchen nook:
+   a retro fridge, a sink, an espresso machine, a two-burner gas hob with the kettle on (the teapot sitting on top, Persian style),
+   oak shelves, a pendant lamp. Sina makes coffee at the machine and pours tea from the stove.
+   ===================================================================== */
+const KIT = (() => {
+  const Z0 = ROOM.front, Z1 = ROOM.front + 0.7, X0 = -0.9, X1 = 0.9, TOP = 0.9, CEIL = 2.4, FZ = Z0 + 0.08;   // FZ: the counter's front edge
+  const K = {
+    Z0, Z1, X0, X1, TOP, pick: [],
+    coffee: { brew: false, fill: 0, warm: 0 }, stove: { level: 0.42, target: 0.42 }, tea: { fill: 0, pour: 0, warm: 0 },
+    fridge: { open: false, k: 0 },
+    VIEW_T: new V3(0.0, 1.2, 3.25), VIEW_P: new V3(-0.25, 1.65, 1.15),
+  };
+  // the kitchen is laid out below in its own frame (centred on x = 0) and then moved over to stand at the left of the wall, as you face it from the room (towards the door side)
+  const SHIFT = 1.2, WX0 = X0 + SHIFT, WX1 = X1 + SHIFT;
+  const proxy = (id, w, h, d, x, y, z) => { const m = mk(new THREE.BoxGeometry(w, h, d), INVIS, x, y, z, scene, false); m.userData.id = id; K.pick.push(m); return m; };
+  const uniq = (o) => new THREE.MeshStandardMaterial(o);   // a material of its own (it changes at run time, so it must not be shared or baked with others)
+
+  // ---- the shell: a plain plastered opening where the wall stood (no casing). On the fridge side it stands a little clear of the fridge;
+  //      on the other it runs right into the room's side wall, which carries on as the nook's wall (no stub of old wall left between) ----
+  // no two faces are ever coplanar: the side walls start behind the old wall's thickness, the nook ceiling starts behind the beam
+  const G = 0.12, OX0 = WX0 - G, OX1 = ROOM.x, WC = (OX0 + OX1) / 2, ZB = Z0 + 0.06;   // ZB: the back face of the old wall
+  const wall = (x0, x1) => mk(new THREE.BoxGeometry(x1 - x0, ROOM.h, 0.12), MAT.wall, (x0 + x1) / 2, ROOM.h / 2, Z0, scene, false);
+  mk(new THREE.BoxGeometry(OX1 - OX0, ROOM.h - CEIL, 0.12), MAT.wall, WC, (ROOM.h + CEIL) / 2, Z0, scene, false);   // the beam over the opening
+  wall(-ROOM.x - 0.1, OX0);   // what is left of the old wall, on the fridge side
+  mk(new THREE.BoxGeometry(0.1, ROOM.h, Z1 + 0.1 - ZB), MAT.wall, OX0 - 0.05, ROOM.h / 2, (ZB + Z1 + 0.1) / 2, scene, false);   // the nook's side wall by the fridge (the other is the room's own wall, run on)
+  mk(new THREE.BoxGeometry(OX1 - OX0 + 0.2, ROOM.h, 0.1), MAT.wall, WC, ROOM.h / 2, Z1 + 0.05, scene, false);
+  { const c = mk(new THREE.PlaneGeometry(OX1 - OX0, Z1 - ZB), MAT.ceiling, WC, CEIL, (ZB + Z1) / 2, scene, false); c.rotation.x = Math.PI / 2; }
+  // clicking anywhere in the nook that is not an appliance (a cabinet, the worktop, the empty space) frames the whole kitchen
+  proxy('kitchen', OX1 - OX0 - 0.01, CEIL - 0.01, Z1 - ZB - 0.01, WC, CEIL / 2, (ZB + Z1) / 2);
+  K.OX0 = OX0; K.OX1 = OX1; K.CEIL = CEIL;
+  const n0 = scene.children.length;   // everything from here on is the kitchen's contents (moved over at the end)
+
+  // ---- the backsplash: hand-made off-white tiles, a little uneven ----
+  const CX0 = X0 + 0.62, CX1 = X1;   // the counter run (the fridge stands left of it)
+  const zel = canvasTex(cvs(512, 512, (c) => {
+    c.fillStyle = '#c9c0ae'; c.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
+      const h = hash(i * 3.7 + j * 9.1), h2 = hash(i * 1.3 + j * 5.7);
+      c.fillStyle = `hsl(${38 + h * 12}, ${16 + h2 * 14}%, ${88 - h * 9}%)`; c.fillRect(i * 64 + 3, j * 64 + 3, 58, 58);
+      c.fillStyle = `rgba(255,255,255,${0.12 + h2 * 0.18})`; c.fillRect(i * 64 + 7, j * 64 + 7, 20, 9);
+    }
+  }), [(CX1 - CX0) / 0.6, 0.62 / 0.6]);
+  { const b = mk(new THREE.PlaneGeometry(CX1 - CX0, 0.62), M('#ffffff', { map: zel, roughness: 0.3 }), (CX0 + CX1) / 2, TOP + 0.31, Z1 - 0.002, scene, false); b.rotation.y = Math.PI; b.receiveShadow = true; }
+
+  // ---- the fridge: a rounded retro one in cream, the main door opens ----
+  const FX0 = X0 + 0.01, FW = 0.6, FH = 1.8, FRONT = 3.72;
+  const cream = M('#ece3cf', { roughness: 0.32 });
+  mk(rbox(FW, FH - 0.04, Z1 - FRONT - 0.01, 0.04), cream, FX0 + FW / 2, 0.04 + (FH - 0.04) / 2, (FRONT + Z1) / 2 - 0.005, scene);
+  for (const dx of [0.08, FW - 0.08]) mk(new THREE.CylinderGeometry(0.018, 0.02, 0.04, 10), MAT.blackMetal, FX0 + dx, 0.02, FRONT + 0.06, scene);
+  const insideTex = canvasTex(cvs(256, 512, (c) => {
+    c.fillStyle = '#f2efe7'; c.fillRect(0, 0, 256, 512);
+    for (const y of [150, 290, 410]) { c.fillStyle = 'rgba(160,180,190,.55)'; c.fillRect(8, y, 240, 6); }
+    const bottle = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y - h, w, h); c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(x + 3, y - h + 4, 4, h - 8); };
+    bottle(28, 148, 30, 92, '#f7f7f2'); bottle(70, 148, 26, 70, '#e9b44c'); bottle(150, 148, 40, 50, '#c44536'); bottle(200, 148, 30, 80, '#7aa36a');
+    bottle(30, 288, 60, 40, '#d6c9a8'); bottle(110, 288, 46, 60, '#f0d9a0'); bottle(180, 288, 50, 34, '#8fb7d6');
+    bottle(40, 408, 70, 50, '#e07a3f'); bottle(130, 408, 90, 44, '#a7c957');
+    c.fillStyle = '#e5e1d8'; c.fillRect(0, 430, 256, 82);
+  }));
+  const insideMat = uniq({ color: '#ffffff', map: insideTex, emissiveMap: insideTex, emissive: '#fff4dc', emissiveIntensity: 0, roughness: 0.7 });
+  mk(new THREE.PlaneGeometry(FW - 0.07, 1.18), insideMat, FX0 + FW / 2, 0.1 + 0.62, FRONT - 0.001, scene, false).rotation.y = Math.PI;
+  const fdoor = dyn(new THREE.Group()); fdoor.position.set(FX0, 0, FRONT); scene.add(fdoor); K.fdoor = fdoor; K.fridgeIn = insideMat;
+  mk(rbox(FW - 0.005, 1.25, 0.05, 0.03), cream, FW / 2, 0.1 + 0.625, -0.025, fdoor);
+  mk(rbox(0.022, 0.42, 0.026, 0.01), MAT.chrome, FW - 0.07, 0.98, -0.07, fdoor);
+  for (const y of [0.8, 1.16]) mk(new THREE.BoxGeometry(0.014, 0.014, 0.028), MAT.chrome, FW - 0.07, y, -0.055, fdoor);
+  mk(rbox(FW - 0.005, 0.41, 0.05, 0.03), cream, FX0 + FW / 2, 1.37 + 0.205, FRONT - 0.025, scene);   // the freezer door
+  mk(rbox(0.022, 0.2, 0.026, 0.01), MAT.chrome, FX0 + FW - 0.07, 1.5, FRONT - 0.07, scene);
+  mk(rbox(0.12, 0.022, 0.006, 0.004), MAT.chrome, FX0 + FW / 2, 1.3, FRONT - 0.056, fdoor);   // badge
+  proxy('fridge', FW + 0.04, FH, 0.66, FX0 + FW / 2, FH / 2, (FRONT + Z1) / 2 - 0.03);
+
+  // ---- base cabinets in sage, an oak top with the sink cut out of it ----
+  const sage = M('#7f977f', { roughness: 0.6 }), oak = M('#d5b083', { map: TEX.walnut, roughness: 0.42 }), steelS = M('#bfc4c9', { metalness: 0.85, roughness: 0.32 });
+  mk(new THREE.BoxGeometry(CX1 - CX0, 0.1, Z1 - FZ - 0.1), M('#2a2622', { roughness: 0.9 }), (CX0 + CX1) / 2, 0.05, (FZ + 0.1 + Z1) / 2, scene);
+  mk(new THREE.BoxGeometry(CX1 - CX0, 0.76, Z1 - FZ - 0.035), sage, (CX0 + CX1) / 2, 0.48, (FZ + 0.035 + Z1) / 2, scene);
+  const EDGES = [CX0, 0.32, CX1];
+  for (let i = 0; i < 2; i++) {
+    const a = EDGES[i] + 0.004, b = EDGES[i + 1] - 0.004, w = b - a, cx = (a + b) / 2;
+    if (i === 1) for (const [y, h] of [[0.68, 0.33], [0.29, 0.38]]) {   // drawers under the hob
+      mk(rbox(w, h, 0.022, 0.006), sage, cx, y, FZ + 0.024, scene); mk(rbox(0.16, 0.014, 0.02, 0.006), MAT.brass, cx, y + h / 2 - 0.06, FZ + 0.004, scene);
+    } else {
+      mk(rbox(w, 0.73, 0.022, 0.006), sage, cx, 0.1 + 0.37, FZ + 0.024, scene);
+      const px = b - 0.05; mk(rbox(0.014, 0.14, 0.02, 0.006), MAT.brass, px, 0.72, FZ + 0.004, scene);
+    }
+  }
+
+  mk(new THREE.BoxGeometry(CX1 - CX0 + 0.01, 0.04, Z1 - FZ), oak, (CX0 + CX1) / 2 + 0.005, TOP - 0.02, (FZ + Z1) / 2, scene);   // the worktop
+  // ---- the espresso machine: brushed steel, a black portafilter, a pressure gauge, three buttons (the round one on the right brews) ----
+  const MX = 0.05, MZ = 4.13, steel = M('#b8bdc4', { metalness: 0.85, roughness: 0.28 }), black = M('#18181a', { roughness: 0.45 });
+  mk(rbox(0.28, 0.36, 0.3, 0.025), steel, MX, TOP + 0.18, MZ, scene);
+  mk(rbox(0.3, 0.022, 0.32, 0.01), black, MX, TOP + 0.371, MZ, scene);
+  for (const dx of [-0.11, 0.11]) mk(new THREE.CylinderGeometry(0.004, 0.004, 0.26, 6), MAT.chrome, MX + dx, TOP + 0.4, MZ, scene).rotation.x = Math.PI / 2;   // cup-warmer rails
+  mk(new THREE.CylinderGeometry(0.038, 0.042, 0.035, 24), steel, MX, TOP + 0.235, 3.955, scene);
+  mk(new THREE.CylinderGeometry(0.036, 0.034, 0.022, 24), black, MX, TOP + 0.208, 3.955, scene);
+  { const hd = mk(rbox(0.024, 0.022, 0.13, 0.008), black, MX + 0.04, TOP + 0.205, 3.885, scene); hd.rotation.y = -0.45; }
+  for (const s of [-1, 1]) mk(new THREE.CylinderGeometry(0.004, 0.003, 0.02, 8), steel, MX + s * 0.008, TOP + 0.188, 3.955, scene);
+  mk(rbox(0.22, 0.022, 0.12, 0.006), steel, MX, TOP + 0.011, 3.952, scene);
+  mk(new THREE.PlaneGeometry(0.19, 0.09), M('#2a2b2f', { roughness: 0.4, metalness: 0.6 }), MX, TOP + 0.0225, 3.952, scene, false).rotation.x = -Math.PI / 2;
+  { const gauge = cvs(128, 128, (c) => { c.fillStyle = '#f4f1ea'; c.beginPath(); c.arc(64, 64, 62, 0, 7); c.fill(); c.strokeStyle = '#222'; c.lineWidth = 3; for (let i = 0; i <= 10; i++) { const a = Math.PI * (0.8 + i * 0.14); c.beginPath(); c.moveTo(64 + Math.cos(a) * 46, 64 + Math.sin(a) * 46); c.lineTo(64 + Math.cos(a) * 56, 64 + Math.sin(a) * 56); c.stroke(); } c.fillStyle = '#c0392b'; c.save(); c.translate(64, 64); c.rotate(Math.PI * 1.55); c.fillRect(-2, -2, 44, 4); c.restore(); });
+    mk(new THREE.CircleGeometry(0.024, 24), M('#ffffff', { map: canvasTex(gauge), roughness: 0.3 }), MX - 0.085, TOP + 0.235, 3.981, scene, false).rotation.y = Math.PI;
+    mk(new THREE.TorusGeometry(0.025, 0.003, 6, 24), MAT.chrome, MX - 0.085, TOP + 0.235, 3.98, scene, false); }
+  K.BTN_Z = 3.979;
+  for (const dx of [-0.06, 0]) mk(new THREE.CylinderGeometry(0.01, 0.01, 0.012, 16), black, MX + dx, TOP + 0.31, K.BTN_Z, scene).rotation.x = Math.PI / 2;
+  const btn = dyn(mk(new THREE.CylinderGeometry(0.012, 0.012, 0.012, 18), black, MX + 0.065, TOP + 0.31, K.BTN_Z, scene)); btn.rotation.x = Math.PI / 2; K.btn = btn;
+  const ledMat = uniq({ color: '#202020', emissive: '#ffb347', emissiveIntensity: 0.15, roughness: 0.4 }); K.ledMat = ledMat;
+  mk(new THREE.TorusGeometry(0.016, 0.0028, 8, 24), ledMat, MX + 0.065, TOP + 0.31, K.BTN_Z - 0.002, scene, false);
+  { const w = mk(new THREE.CylinderGeometry(0.004, 0.004, 0.15, 8), MAT.chrome, MX + 0.15, TOP + 0.17, 3.99, scene); w.rotation.z = 0.25; }   // steam wand
+  { const bag = mk(rbox(0.09, 0.16, 0.06, 0.012), M('#a98157', { roughness: 0.9 }), -0.1, 1.435 + 0.08, Z1 - 0.1, scene); bag.rotation.y = 0.2; }   // beans, up on the shelf
+  // the cup: a white espresso cup, the handle on its right; the coffee in it rises as it brews
+  const por = M('#f3efe8', { roughness: 0.22 });
+  const cup = dyn(new THREE.Group()); scene.add(cup); K.cup = cup;
+  K.CUP_HOME = new V3(-0.12, TOP, 3.84); K.CUP_TRAY = new V3(MX, TOP + 0.022, 3.952); cup.position.copy(K.CUP_HOME);
+  mk(new THREE.CylinderGeometry(0.034, 0.026, 0.065, 28, 1, true), new THREE.MeshStandardMaterial({ color: '#f3efe8', roughness: 0.22, side: THREE.DoubleSide }), 0, 0.0325, 0, cup);
+  mk(new THREE.CylinderGeometry(0.026, 0.026, 0.004, 24), por, 0, 0.002, 0, cup);
+  mk(new THREE.TorusGeometry(0.034, 0.0022, 6, 28), por, 0, 0.065, 0, cup, false).rotation.x = Math.PI / 2;
+  mk(new THREE.TorusGeometry(0.016, 0.0045, 8, 16, Math.PI), por, -0.034, 0.034, 0, cup).rotation.z = Math.PI / 2;
+  const coffee = mk(new THREE.CylinderGeometry(0.0315, 0.0265, 1, 22), M('#3a2213', { roughness: 0.25 }), 0, 0, 0, cup, false);
+  const crema = mk(new THREE.CircleGeometry(0.0315, 22), M('#b98a57', { roughness: 0.35 }), 0, 0, 0, cup, false); crema.rotation.x = -Math.PI / 2;
+  K.cupFill = (f) => { const h = Math.max(0.001, f * 0.052); coffee.visible = crema.visible = f > 0.01; coffee.scale.y = h; coffee.position.y = 0.004 + h / 2; crema.position.y = 0.0045 + h; const r = 0.0265 + 0.005 * (h / 0.052); crema.scale.setScalar(r / 0.0315); };
+  K.cupFill(0);
+  const streamMat = uniq({ color: '#4a2a14', transparent: true, opacity: 0.92, roughness: 0.3 });
+  const cstream = dyn(mk(new THREE.CylinderGeometry(0.0022, 0.0022, 1, 6, 1, true), streamMat, MX, 0, 3.955, scene, false)); cstream.visible = false; K.cstream = cstream;
+  proxy('espresso', 0.34, 0.44, 0.36, MX, TOP + 0.2, MZ - 0.02);
+
+  // ---- the gas hob: black glass, two burners with cast-iron grates; the left one is lit, the kettle on it and the teapot on top ----
+  const HX = 0.645, HZ = 4.0, BX = [0.53, 0.77], iron = M('#1d1d1f', { roughness: 0.55, metalness: 0.5 });
+  mk(rbox(0.5, 0.012, 0.44, 0.006), M('#121214', { roughness: 0.14, metalness: 0.45 }), HX, TOP + 0.006, HZ, scene);
+  for (const bx of BX) {
+    mk(new THREE.CylinderGeometry(0.06, 0.064, 0.012, 28), M('#3a3a3d', { metalness: 0.7, roughness: 0.45 }), bx, TOP + 0.018, HZ, scene);
+    mk(new THREE.CylinderGeometry(0.034, 0.036, 0.009, 24), iron, bx, TOP + 0.028, HZ, scene);
+    for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + Math.PI / 4, arm = mk(new THREE.BoxGeometry(0.06, 0.012, 0.012), iron, bx + Math.cos(a) * 0.075, TOP + 0.038, HZ + Math.sin(a) * 0.075, scene); arm.rotation.y = -a; }
+    mk(new THREE.TorusGeometry(0.105, 0.006, 6, 32), iron, bx, TOP + 0.038, HZ, scene).rotation.x = Math.PI / 2;
+  }
+  K.knobs = BX.map(bx => { const k = dyn(new THREE.Group()); k.position.set(bx, TOP + 0.012, 3.815); scene.add(k);
+    mk(new THREE.CylinderGeometry(0.019, 0.021, 0.022, 20), MAT.chrome, 0, 0.011, 0, k); mk(new THREE.BoxGeometry(0.004, 0.003, 0.016), black, 0, 0.0235, -0.006, k); return k; });
+  // the flame: a ring of small blue tongues, pale at the core, with a soft glow
+  const flameMat = new THREE.MeshBasicMaterial({ color: '#3f78ff', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
+  const coreMat = new THREE.MeshBasicMaterial({ color: '#b5d6ff', transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false });
+  const flame = dyn(new THREE.Group()); flame.position.set(BX[0], TOP + 0.031, HZ); scene.add(flame); K.flame = flame; K.tongues = [];
+  const tongue = new THREE.ConeGeometry(0.0055, 0.03, 6).translate(0, 0.015, 0), coreG = new THREE.ConeGeometry(0.003, 0.014, 5).translate(0, 0.007, 0);
+  for (let i = 0; i < 18; i++) {
+    const a = i / 18 * Math.PI * 2, p = new THREE.Group(); p.rotation.y = -a; flame.add(p);
+    const t1 = mk(tongue, flameMat, 0.036, 0, 0, p, false); t1.rotation.z = -0.75; mk(coreG, coreMat, 0.035, 0, 0, p, false).rotation.z = -0.75;
+    K.tongues.push(t1);
+  }
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color: '#4d7dff', transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
+  glow.position.set(BX[0], TOP + 0.045, HZ); glow.scale.setScalar(0.26); scene.add(glow); K.flameGlow = glow;
+  // the kettle: brushed steel, a spout out to the left (towards the glass), a black side handle
+  const KY = TOP + 0.044, steel2 = M('#c9cdd2', { metalness: 0.9, roughness: 0.2 });
+  const kettle = new THREE.Group(); kettle.position.set(BX[0], KY, HZ); scene.add(kettle); K.kettle = kettle;
+  mk(new THREE.LatheGeometry([[0, 0], [0.075, 0], [0.09, 0.012], [0.096, 0.05], [0.09, 0.095], [0.072, 0.128], [0.052, 0.145], [0.05, 0.152], [0, 0.152]].map(([r, y]) => new THREE.Vector2(r, y)), 36), steel2, 0, 0, 0, kettle);
+  { const a = new V3(-0.075, 0.05, 0), b = new V3(-0.15, 0.125, 0), d = b.clone().sub(a), sp = mk(new THREE.CylinderGeometry(0.008, 0.016, d.length(), 12), steel2, (a.x + b.x) / 2, (a.y + b.y) / 2, 0, kettle); sp.quaternion.setFromUnitVectors(UP, d.normalize()); K.kSpout = b; }
+  for (const y of [0.04, 0.12]) mk(new THREE.CylinderGeometry(0.006, 0.006, 0.045, 8), black, 0, y, 0.105, kettle).rotation.x = Math.PI / 2;
+  mk(rbox(0.016, 0.1, 0.016, 0.006), black, 0, 0.08, 0.128, kettle);
+  // the teapot: white porcelain with a blue band, sitting on the kettle to keep warm; spout left, handle right
+  const TPH = new V3(BX[0], KY + 0.152, HZ); K.TP_HOME = TPH;
+  const tp = dyn(new THREE.Group()); tp.position.copy(TPH); scene.add(tp); K.teapot = tp;
+  const tpMat = M('#f4f2ee', { roughness: 0.2 });
+  mk(new THREE.LatheGeometry([[0, 0], [0.034, 0], [0.05, 0.008], [0.064, 0.034], [0.062, 0.058], [0.046, 0.079], [0.032, 0.086], [0.03, 0.09], [0, 0.09]].map(([r, y]) => new THREE.Vector2(r, y)), 32), tpMat, 0, 0, 0, tp);
+  mk(new THREE.CylinderGeometry(0.0646, 0.0646, 0.012, 32, 1, true), M('#2f5d9e', { roughness: 0.3 }), 0, 0.04, 0, tp, false);
+  mk(new THREE.SphereGeometry(0.01, 12, 8), M('#2f5d9e', { roughness: 0.3 }), 0, 0.096, 0, tp);
+  { const a = new V3(-0.055, 0.03, 0), b = new V3(-0.103, 0.078, 0), d = b.clone().sub(a), sp = mk(new THREE.CylinderGeometry(0.005, 0.01, d.length(), 10), tpMat, (a.x + b.x) / 2, (a.y + b.y) / 2, 0, tp); sp.quaternion.setFromUnitVectors(UP, d.normalize()); K.tpSpout = b; }
+  mk(new THREE.TorusGeometry(0.028, 0.006, 8, 18, Math.PI), tpMat, 0.062, 0.045, 0, tp).rotation.z = -Math.PI / 2;
+  K.tpHandle = new V3(0.092, 0.045, 0);
+  // the tea glass (an estekan) on its saucer, and a bowl of sugar cubes
+  K.GLASS_HOME = new V3(0.27, TOP + 0.009, 3.88);
+  mk(new THREE.CylinderGeometry(0.05, 0.038, 0.009, 28), M('#f6f3ec', { roughness: 0.25 }), 0.27, TOP + 0.0045, 3.88, scene);
+  mk(new THREE.TorusGeometry(0.05, 0.0018, 6, 30), MAT.brass, 0.27, TOP + 0.009, 3.88, scene, false).rotation.x = Math.PI / 2;
+  const glass = dyn(new THREE.Group()); glass.position.copy(K.GLASS_HOME); scene.add(glass); K.glass = glass;
+  const glassProfile = [[0.016, 0], [0.019, 0.004], [0.02, 0.012], [0.016, 0.035], [0.019, 0.058], [0.024, 0.076]];
+  const glassMat = new THREE.MeshStandardMaterial({ color: '#e9f2f5', transparent: true, opacity: 0.32, roughness: 0.04, metalness: 0.1, side: THREE.DoubleSide, depthWrite: false });
+  const gm2 = mk(new THREE.LatheGeometry(glassProfile.map(([r, y]) => new THREE.Vector2(r, y)), 28), glassMat, 0, 0, 0, glass, false); gm2.renderOrder = 3;
+  mk(new THREE.CircleGeometry(0.016, 20), glassMat, 0, 0.001, 0, glass, false).rotation.x = -Math.PI / 2;
+  mk(new THREE.TorusGeometry(0.024, 0.0012, 6, 28), MAT.brass, 0, 0.076, 0, glass, false).rotation.x = Math.PI / 2;
+  const teaMat = uniq({ color: '#9a3a12', emissive: '#3a0e02', emissiveIntensity: 0.6, transparent: true, opacity: 0.86, roughness: 0.1 });
+  const tea = mk(new THREE.LatheGeometry(glassProfile.slice(0, 5).map(([r, y]) => new THREE.Vector2(r * 0.9, y)).concat([new THREE.Vector2(0, 0.058)]), 24), teaMat, 0, 0.002, 0, glass, false);
+  K.teaFill = (f) => { tea.visible = f > 0.01; tea.scale.set(1, Math.max(0.01, f * 1.05), 1); };
+  K.teaFill(0);
+  const tstream = dyn(mk(new THREE.CylinderGeometry(0.0024, 0.0024, 1, 6, 1, true), uniq({ color: '#a8461a', emissive: '#3a0e02', emissiveIntensity: 0.6, transparent: true, opacity: 0.85 }), 0, 0, 0, scene, false)); tstream.visible = false; K.tstream = tstream;
+  { const SB = 0.28, SZ = 4.16, bowl = mk(new THREE.CylinderGeometry(0.045, 0.032, 0.035, 24, 1, true), new THREE.MeshStandardMaterial({ color: '#2f5d9e', roughness: 0.3, side: THREE.DoubleSide }), SB, TOP + 0.0175, SZ, scene);
+    mk(new THREE.CircleGeometry(0.032, 20), M('#2f5d9e', { roughness: 0.3 }), SB, TOP + 0.002, SZ, scene, false).rotation.x = -Math.PI / 2;
+    for (let i = 0; i < 6; i++) { const c = mk(new THREE.BoxGeometry(0.014, 0.014, 0.014), M('#fbf8f1', { roughness: 0.9 }), SB + Math.cos(i * 2.1) * 0.016, TOP + 0.026 + (i > 3 ? 0.012 : 0), SZ + Math.sin(i * 2.1) * 0.016, scene); c.rotation.y = i; } }
+  proxy('stove', 0.7, 0.4, 0.5, 0.55, TOP + 0.17, 4.0);
+  // a slim canopy hood over the hob, with a warm strip light under it
+  mk(rbox(0.5, 0.06, 0.32, 0.01), black, HX, 1.64, Z1 - 0.16, scene);
+  mk(rbox(0.24, CEIL - 1.67, 0.2, 0.006), black, HX, (1.67 + CEIL) / 2, Z1 - 0.1, scene);
+  mk(new THREE.BoxGeometry(0.4, 0.006, 0.02), hdr('#ffd9a8', 1.6), HX, 1.607, Z1 - 0.06, scene, false);
+  { const c = card(0.6, 0.55, '#ffb36b', 0.32); c.position.set(HX, 1.2, Z1 - 0.004); c.rotation.y = Math.PI; }
+
+  // ---- open oak shelves: jars of beans and pasta, plates, mugs, books, a trailing pothos ----
+  const SH0 = CX0 + 0.03, SH1 = 0.36, SHC = (SH0 + SH1) / 2;
+  for (const y of [1.42, 1.74]) {
+    mk(rbox(SH1 - SH0, 0.03, 0.21, 0.008), oak, SHC, y, Z1 - 0.105, scene);
+    for (const x of [SH0 + 0.06, SH1 - 0.06]) mk(new THREE.BoxGeometry(0.012, 0.06, 0.15), MAT.brass, x, y - 0.045, Z1 - 0.08, scene);
+  }
+  const jar = (x, y, h, col) => {
+    mk(new THREE.CylinderGeometry(0.042, 0.042, h, 20, 1, true), new THREE.MeshStandardMaterial({ color: '#e8f0f2', transparent: true, opacity: 0.28, roughness: 0.05, side: THREE.DoubleSide, depthWrite: false }), x, y + h / 2, Z1 - 0.1, scene, false);
+    mk(new THREE.CylinderGeometry(0.039, 0.039, h * 0.72, 18), M(col, { roughness: 0.85 }), x, y + h * 0.36, Z1 - 0.1, scene);
+    mk(new THREE.CylinderGeometry(0.044, 0.044, 0.02, 20), oak, x, y + h + 0.01, Z1 - 0.1, scene);
+  };
+  jar(SH0 + 0.07, 1.435, 0.16, '#3b2416'); jar(SH0 + 0.17, 1.435, 0.12, '#e8c46a');
+  ['#c8643c', '#7f977f'].forEach((col, i) => { const m = new THREE.Group(); m.position.set(0.12 + i * 0.12, 1.435, Z1 - 0.1); m.rotation.y = 0.6 - i * 0.5; scene.add(m);
+    mk(new THREE.CylinderGeometry(0.036, 0.033, 0.09, 22), M(col, { roughness: 0.35 }), 0, 0.045, 0, m); mk(new THREE.TorusGeometry(0.02, 0.006, 8, 14, Math.PI), M(col, { roughness: 0.35 }), 0.036, 0.047, 0, m).rotation.z = -Math.PI / 2; });
+  ['#b6492f', '#2f5d9e', '#e3b23c'].forEach((col, i) => mk(rbox(0.03, 0.2 - i * 0.012, 0.15, 0.004), M(col, { roughness: 0.7 }), SH0 + 0.04 + i * 0.034, 1.755 + (0.2 - i * 0.012) / 2, Z1 - 0.1, scene));
+  for (let i = 0; i < 4; i++) mk(new THREE.CylinderGeometry(0.085, 0.075, 0.012, 28), M('#f2eee6', { roughness: 0.3 }), 0.0, 1.761 + i * 0.013, Z1 - 0.11, scene);
+  pothos(0.25, 1.755, Z1 - 0.1, 5, 0.5, MAT.ceramic);
+  { const led = mk(new THREE.BoxGeometry(SH1 - SH0 - 0.06, 0.005, 0.015), hdr('#ffe0b0', 1.4), SHC, 1.402, Z1 - 0.03, scene, false); led.castShadow = false;
+    const c = card(0.9, 0.6, '#ffbf7a', 0.3); c.position.set(SHC, 1.15, Z1 - 0.004); c.rotation.y = Math.PI; K.ledCard = c; }
+  // a pot of basil at the back of the worktop
+  mk(new THREE.CylinderGeometry(0.05, 0.04, 0.09, 20), M('#c8643c', { roughness: 0.8 }), -0.22, TOP + 0.045, 4.2, scene);
+  for (let i = 0; i < 9; i++) { const a = i * 2.4, r = 0.012 + hash(i) * 0.022; const l = mk(new THREE.SphereGeometry(0.022, 10, 8), MAT.leaf2, -0.22 + Math.cos(a) * r, TOP + 0.11 + hash(i + 3) * 0.05, 4.2 + Math.sin(a) * r, scene, false); l.scale.set(1, 0.45, 0.7); l.rotation.set(hash(i) - 0.5, a, 0.4); }
+
+  // ---- the pendant lamp over the counter ----
+  const PX = 0.15, PY = 1.9, PZ = 3.98;
+  mk(new THREE.CylinderGeometry(0.003, 0.003, CEIL - PY - 0.13, 6), MAT.blackMetal, PX, (CEIL + PY + 0.13) / 2, PZ, scene, false);
+  mk(new THREE.SphereGeometry(0.14, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), M('#24302a', { roughness: 0.45, metalness: 0.3 }), PX, PY, PZ, scene);
+  const shadeIn = new THREE.MeshStandardMaterial({ color: '#f3e3c3', emissive: '#ffb066', emissiveIntensity: 0.84, roughness: 1, side: THREE.BackSide });
+  mk(new THREE.SphereGeometry(0.137, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), shadeIn, PX, PY, PZ, scene, false);
+  mk(new THREE.SphereGeometry(0.032, 16, 12), hdr('#ffd9a8', 2.2), PX, PY + 0.02, PZ, scene, false);
+  mk(new THREE.TorusGeometry(0.14, 0.004, 6, 32), MAT.brass, PX, PY, PZ, scene, false).rotation.x = Math.PI / 2;
+  const pt = new THREE.PointLight('#ffc98a', 2.4, 3.4, 2); pt.position.set(PX, PY - 0.06, PZ); scene.add(pt);
+  lights.klamp = { on: true, k: 1, pt, base: 2.4, mats: [shadeIn], cards: [[K.ledCard, 0.3]] };
+  proxy('klamp', 0.32, 0.22, 0.32, PX, PY + 0.06, PZ);
+
+  // ---- steam: from the kettle's spout, the coffee cup and the tea glass ----
+  const puffs = (n, size) => Array.from({ length: n }, (_, i) => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: steamTex, transparent: true, depthWrite: false, opacity: 0 })); s.userData.ph = i / n; s.userData.base = size; s.scale.setScalar(size); scene.add(s); return s; });
+  K.kSteam = puffs(10, 0.07); K.cSteam = puffs(6, 0.05); K.gSteam = puffs(6, 0.045);
+  for (let i = n0; i < scene.children.length; i++) scene.children[i].position.x += SHIFT;
+  for (const v of [K.CUP_HOME, K.CUP_TRAY, K.TP_HOME, K.GLASS_HOME, K.VIEW_T, K.VIEW_P]) v.x += SHIFT;
+  K.X0 = WX0; K.X1 = WX1;
+  return K;
+})();
 
 await tick('TURNING ON THE LAMPS');
 /* =====================================================================
@@ -3445,6 +3688,11 @@ const Sound = (() => {
     },
     tap(delay = 0) { if (!ensure()) return; const t0 = ctx.currentTime + delay, o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(880, t0); o.frequency.exponentialRampToValueAtTime(1400, t0 + 0.08); env(g, t0, 0.07, 0.01, 0.17); o.connect(g).connect(sfx); o.start(t0); o.stop(t0 + 0.22); },
     click() { noise(0, 0.05, 2500, 1800, 0.06, 1.2); },
+    brew(d) { noise(0, 0.4, 170, 120, 0.06, 0.8, 'lowpass'); noise(0.3, d, 900, 650, 0.03, 0.7); noise(0.35, d * 0.9, 3200, 2600, 0.01, 2.5); },   // the pump's thrum, then the pour
+    gas() { noise(0, 0.08, 2600, 2200, 0.05, 1.6); noise(0.12, 0.08, 2600, 2200, 0.05, 1.6); noise(0.2, 0.9, 420, 950, 0.05, 0.7); },     // tick, tick, and the gas catches
+    pour(d) { noise(0, d, 1600, 1100, 0.028, 1.1); },
+    fridge(open) { noise(0, 0.2, open ? 500 : 260, open ? 900 : 180, 0.05, 1); },
+
     swish() { noise(0, 1.1, 700, 1600, 0.035, 0.9); noise(0.15, 0.9, 1800, 900, 0.02, 1.2); },
     whoosh(delay = 0) { noise(delay, 2.2, 160, 2800, 0.15); },
     step() { noise(0, 0.09, 140, 90, 0.045, 1.2); },
@@ -3759,7 +4007,7 @@ const lookPlane = new THREE.Plane(), tip = $('#tip'), _hit = new V3(), _pn = new
 let elapsed = 0;
 const pickRoots = [...pickables, ...books.map(b => b.mesh), mug, nb, pen, deck.g, gems.g, ch.root, chair];
 scene.traverse(o => { const id = o.userData && o.userData.id; if (id === 'lamp' || id === 'sconce' || id === 'repos' || id === 'persian' || id === 'plasma' || id === 'monstera' || id === 'pothosL' || id === 'door' || id === 'mailbox' || id === 'bot' || (typeof id === 'string' && id.startsWith('candle:'))) pickRoots.push(o); });
-pickRoots.push(guitar.gm, hp, PHONES.stand, ...CURTAINS.meshes, LIB.pick);
+pickRoots.push(guitar.gm, hp, PHONES.stand, ...CURTAINS.meshes, LIB.pick, ...KIT.pick);
 scene.traverse(o => { if (o.userData && (o.userData.id === 'rose' || o.userData.id === 'cabinet')) pickRoots.push(o); });
 { const sp = mk(new THREE.PlaneGeometry(ROOM.x - 1.06, ROOM.h - 0.1), INVIS, (ROOM.x + 1.06) / 2, (ROOM.h - 0.1) / 2, ROOM.back + 0.004, scene, false); sp.userData.id = 'repos'; pickRoots.push(sp); }
 { const wp = mk(new THREE.PlaneGeometry(WIN.z1 - WIN.z0, WIN.y1 - WIN.y0), new THREE.MeshBasicMaterial({ visible: false }), -ROOM.x - 0.01, (WIN.y0 + WIN.y1) / 2, (WIN.z0 + WIN.z1) / 2, scene, false); wp.rotation.y = Math.PI / 2; wp.userData.id = 'window'; pickRoots.push(wp); }
@@ -3774,7 +4022,7 @@ function updatePointerWorld() {
 function pick() {
   raycaster.setFromCamera(ndc, camera);
   const hits = raycaster.intersectObjects(view === 'card' ? cardPick : pickRoots, true);
-  for (const h of hits) { if (h.object.userData.lib && h.instanceId != null) return { id: LIB.ids[h.instanceId], point: h.point }; if (h.object === ch.headBlock && PHONES.on) return { id: 'phones', point: h.point }; if (h.object.userData.blocker) return null; if (h.object.userData.id) return { id: h.object.userData.id, point: h.point }; }
+  for (const h of hits) { if (h.object.userData.lib && h.instanceId != null) return { id: LIB.ids[h.instanceId], point: h.point }; if (h.object === ch.headBlock && PHONES.on) return { id: 'phones', point: h.point }; if (h.object.userData.blocker) return null; if (h.object.userData.id === 'kitchen') { const k = hits.find(x => x.distance > h.distance && x.object.userData.id && x.object.userData.id !== 'kitchen' && KIT.pick.includes(x.object)); if (k) return { id: k.object.userData.id, point: k.point }; } if (h.object.userData.id) return { id: h.object.userData.id, point: h.point }; }
   return null;
 }
 function screenTouch(id, worldPoint) {
@@ -3788,6 +4036,8 @@ function infoFor(id) {
   if (id === 'guitar') return { ...ACTIONS.guitar, host: act ? (act.phase === 'play' ? 'put it back' : 'one moment…') : ACTIONS.guitar.host };
   if (id === 'phones') return { ...ACTIONS.phones, host: PHONES.on ? 'take them off' : 'put them on' };
   if (id === 'curtains') return { ...ACTIONS.curtains, host: CURTAINS.want ? 'open them' : 'close them' };
+  if (id === 'fridge') return { ...ACTIONS.fridge, host: KIT.fridge.open ? 'close it' : 'open it' };
+  if ((id === 'espresso' || id === 'stove') && act && act.kind) return { ...ACTIONS[id], host: 'one moment…' };
   if (id && id.startsWith('candle:')) { const c = CANDLES[+id.slice(7)]; return c ? { label: 'Candle', host: c.on ? 'blow it out' : 'light it again', c1: '#ffb04a' } : null; }
   if (id === 'mailbox') { const n = MAIL.total || MAIL.letters.length; return { ...ACTIONS.mailbox, host: MAIL.state === 'ok' || MAIL.demo ? (n ? `${n.toLocaleString('en')} letter${n > 1 ? 's' : ''}${hasNew() ? ' · new' : ''} · open it` : 'empty · write the first letter') : 'open it' }; }
   return LINKS[id] || ACTIONS[id] || CARD_LINKS[id] || null;
@@ -4476,7 +4726,11 @@ function runAction(id) {
   else if (id === 'monstera' || id === 'pothosL') enterWindow();
   else if (id === 'persian') wakePersian();
   else if (id.startsWith('candle:')) toggleCandle(+id.slice(7));
-  else if (id === 'lamp' || id === 'sconce') setLamp(id, !lights[id].on);
+  else if (id === 'lamp' || id === 'sconce' || id === 'klamp') setLamp(id, !lights[id].on);
+  else if (id === 'espresso') startKitchen('coffee');
+  else if (id === 'stove') startKitchen('tea');
+  else if (id === 'fridge') { KIT.fridge.open = !KIT.fridge.open; Sound.fridge(KIT.fridge.open); tipFor = null; }
+  else if (id === 'kitchen') focusTo(...kitchenView());
   else if (id === 'window') { if (view === 'window') lightning(true); else enterWindow(); }
   else if (id === 'plasma') { plasmaMat.uniforms.uZap.value = 1; Sound.zap(); }
   else if (id === 'repos') enterShelf();
@@ -4520,7 +4774,7 @@ function activate(id, point) {
   if (!id || view === 'door' || postTw) return;
   if (id.startsWith('card:')) { openCardLink(id); return; }
   if (view === 'card' && id !== 'slot' && id !== 'lofi') return;   // everything else lives inside
-  if (act && !(id === 'guitar' || id === 'lofi' || id === 'plasma' || id === 'lamp' || id === 'sconce' || id === 'curtains' || id === 'bot' || id === 'rose' || id.startsWith('candle:'))) return;   // Sina is busy with the guitar
+  if (act && !(id === 'guitar' || id === 'lofi' || id === 'plasma' || id === 'lamp' || id === 'sconce' || id === 'klamp' || id === 'fridge' || id === 'curtains' || id === 'bot' || id === 'rose' || id.startsWith('candle:'))) return;   // Sina is busy with the guitar
   if (ACTIONS[id] || id.startsWith('candle:')) { runAction(id); return; }
   const L = LINKS[id];
   if (seq || !L) return;
@@ -4653,7 +4907,7 @@ const hangR = (out) => { ch.arms.R.upper.getWorldPosition(out); return out.add(_
 function soundOn() { if (!Sound.on) $('#btnSound').textContent = Sound.toggle() ? '🔊' : '🔇'; Sound.ambient(); }
 function toggleGuitar() {
   if (seq || PHONES.anim || view === 'card' || view === 'door' || postTw) return;
-  if (act) { act.stopReq = true; return; }
+  if (act) { if (!act.kind) act.stopReq = true; return; }
   if (PHONES.on) { togglePhones(); PHONES.after = 'guitar'; return; }   // headphones off first, then the guitar
   if (view === 'shelf') leaveShelf(true); if (view === 'window') leaveWindow(true); if (view === 'mail') leaveMail(true); if (view === 'library') leaveLibrary(true);
   if (ZEN.on) endZen();
@@ -4698,6 +4952,7 @@ function stepAct(dt, t, o) {   // o: { stand, gait, look, pitch }
   const fret = (out) => gPt(out, -0.034, A.fretY, 0.004);   // the knuckles, just over the bass edge of the neck
   const strum = (out) => gPt(out, A.strumX, 0.56, 0.085);   // the pick, just over the strings
   const overEdge = (out) => gPt(out, -0.25, 0.4, 0.03).sub(ch.arms.R.upper.getWorldPosition(_av3));   // strumming elbow: out over the top of the body, forearm resting on its edge
+  if (A.kind && A.phase !== 'sitdown') { stepKitchen(A, dt, t, o, go, walk, face); return; }   // coffee / tea in the kitchen
   switch (A.phase) {
     case 'rise': {   // push the chair back and stand up
       const k = clamp(pt / 1.0, 0, 1);
@@ -4830,6 +5085,7 @@ function stepAct(dt, t, o) {   // o: { stand, gait, look, pitch }
   }
 }
 function actCamera(dt) {
+  if (act.kind) { kitchenCamera(act, dt); return; }
   const A = act, seated = ['face2', 'sit', 'play', 'rise2', 'waitCat', 'pet', 'point', 'waitErrand', 'huh'].includes(A.phase);
   let p, tg;
   if (seated) {
@@ -4848,6 +5104,203 @@ function actCamera(dt) {
   }
   A.camP.lerp(p, 1 - Math.exp(-(seated ? 1.8 : 2.4) * dt)); A.camT.lerp(tg, 1 - Math.exp(-(seated ? 2.2 : 3) * dt));
   camera.position.copy(A.camP); controls.target.copy(A.camT); camera.lookAt(controls.target);
+}
+// ---- the kitchen acts: Sina gets up, walks to the counter, makes an espresso / pours a glass of tea, drinks it, and comes back to the desk ----
+const KSPOT = { coffee: new V3(1.15, 0, 3.47), tea: new V3(1.68, 0, 3.47) };
+const kitchenPath = (s) => [[0, 0.08], [0.55, 0.2], [0.68, 0.75], [0.42, 1.45], [0.4, 2.3], [(0.4 + s.x) / 2, 2.78], [s.x, 3.08], [s.x, s.z]];   // round the pouf and the armchair
+const kq = (fx, fy, fz, px, py, pz) => { const F = new V3(fx, fy, fz).normalize(), P = new V3(px, py, pz).normalize(); return (out) => handQ(out, F, P); };
+const Q_CUP = kq(0.45, -0.35, 0.8, 0.85, 0.1, -0.45), Q_TP = kq(-0.2, -0.25, 1, -1, 0.1, 0), Q_PRESS = kq(0, -0.15, 1, 0, -1, 0), Q_KNOB = kq(0, -0.85, 0.5, 0, -0.5, -0.85);
+const Q_SIP = kq(0.6, 0.15, 0.78, 0.8, 0, -0.6);   // drinking: the hand turns in, knuckles forward, fingers across towards his left
+const P_R = new V3(0.75, -0.55, 0.35), P_L = new V3(-0.45, -0.75, 0.4), P_SIP = new V3(0.5, -1, 0.45), P_RC = new V3(0.25, -0.85, 0.45), P_SIPC = new V3(0.12, -1, 0.5),   // (at the coffee machine the fridge is just to his right: elbows kept in)
+   _kv = new V3(), _kv2 = new V3(), _kp = new V3();
+const cupGrip = (out) => KIT.cup.localToWorld(out.set(-0.05, 0.034, 0));
+const glassGrip = (out) => KIT.glass.localToWorld(out.set(-0.03, 0.035, 0));
+const tpGrip = (out) => KIT.teapot.localToWorld(out.set(KIT.tpHandle.x, KIT.tpHandle.y, 0));
+const hangL = (out) => { ch.arms.L.upper.getWorldPosition(out); return out.add(_av3.set(-0.032, -0.69, -0.01).applyAxisAngle(UP, body.yaw)); };
+const _ka = new V3();
+// a reach that lifts the hand up and over the counter's edge on its way from his side to the thing (e: 0 at his side, 1 at the thing), never straight through the worktop
+const arcTo = (get, hang, e) => (out) => { hang(_ka); get(out); out.lerpVectors(_ka, out, e); out.y += Math.sin(Math.PI * Math.min(1, e * 1.15)) * 0.16; out.z -= Math.sin(Math.PI * e) * 0.02; return out; };
+const mouthAt = (out, dz) => ch.head.localToWorld(out.set(0, 0.06, -0.12)).add(_kv2.set(0, -0.06, dz));   // where a cup's foot goes when its rim is at his lips
+function startKitchen(kind) {
+  if (seq || act || PHONES.anim || view === 'card' || view === 'door' || postTw) return;
+  if (PHONES.on) { togglePhones(); PHONES.after = kind; return; }   // headphones off first
+  if (view === 'shelf') leaveShelf(true); if (view === 'window') leaveWindow(true); if (view === 'mail') leaveMail(true); if (view === 'library') leaveLibrary(true);
+  if (ZEN.on) endZen();
+  soundOn();
+  intro = null; catCam = null; ZEN.cam = null; controls.enabled = false; tip.style.opacity = 0; tipFor = null; hideHint();
+  act = { kind, phase: 'krise', t: 0, pt: 0, camP: camera.position.clone(), camT: controls.target.clone(), spot: KSPOT[kind] };
+  Sound.tap(0.2);
+}
+function stepKitchen(A, dt, t, o, go, walk, face) {
+  const pt = A.pt, L = ARMOV.L, R = ARMOV.R, K = KIT, PR = A.kind === 'coffee' ? P_RC : P_R, PS = A.kind === 'coffee' ? P_SIPC : P_SIP;
+  const hold = (H, get, pole, orient, hp, pose, w, ow = 1) => { H.w = w; H.get = get; H.pole.copy(pole); H.poleGet = null; H.orient = orient; H.ow = ow; H.hp = hp; H.hand = pose; };
+  const reach = (H, get, hang, pole, orient, hp, pose, e) => hold(H, arcTo(get, hang, e), pole, orient, hp, pose, e > 0.001 ? 1 : 0, smooth(0.15, 0.85, e));
+  const work = () => { o.stand = 1; o.gait = 0; body.yaw = dampAngle(body.yaw, Math.PI, 6, dt); body.leanExtra = damp(body.leanExtra, 0.2, 4, dt); };
+  L.hp = HP_KNUCKLE; if (A.phase !== 'tlift' && A.phase !== 'tpour' && A.phase !== 'tback') L.w = 0;
+  switch (A.phase) {
+    case 'krise': {   // push the chair back and stand up, as for the guitar
+      const k = clamp(pt / 1.0, 0, 1);
+      o.stand = ease(k); body.pos.set(C.x, 0, lerp(C.z, 0.08, ease(k))); body.chairZ = lerp(C.z, C.z + 0.34, ease(clamp(pt / 0.7, 0, 1))); body.leanExtra = Math.sin(Math.PI * k) * 0.42;
+      if (k >= 1) { A.W = curveOf(kitchenPath(A.spot)); const tn = A.W.c.getTangentAt(0.03); A.yaw0 = Math.atan2(-tn.x, -tn.z); go('kturn'); }
+      break;
+    }
+    case 'kturn': face(A.yaw0, 'kwalk'); break;
+    case 'kwalk': walk('kface'); break;
+    case 'kface': face(Math.PI, A.kind === 'coffee' ? 'cgrab' : 'tknob'); break;
+    // ---------- coffee ----------
+    case 'cgrab': {   // reach for the cup by its handle
+      work(); const k = clamp(pt / 0.9, 0, 1);
+      reach(R, cupGrip, hangR, PR, Q_CUP, HP_PALM, k > 0.8 ? HP.GRIP : HP.RELAX, ease(k)); o.look = K.cup.getWorldPosition(_actLook);
+      if (k >= 1) { A.from = K.cup.position.clone(); go('cplace'); }
+      break;
+    }
+    case 'cplace': {   // under the spout, on the drip tray
+      work(); const e = ease(clamp(pt / 1.0, 0, 1));
+      K.cup.position.lerpVectors(A.from, K.CUP_TRAY, e); K.cup.position.y += Math.sin(Math.PI * e) * 0.06;
+      hold(R, cupGrip, PR, Q_CUP, HP_PALM, HP.GRIP, 1); o.look = K.cup.getWorldPosition(_actLook);
+      if (pt >= 1.0) go('crel');
+      break;
+    }
+    case 'crel': { work(); const k = clamp(pt / 0.6, 0, 1); reach(R, cupGrip, hangR, PR, Q_CUP, HP_PALM, HP.RELAX, 1 - ease(k)); o.look = K.cup.getWorldPosition(_actLook); if (k >= 1) go('cpress'); break; }
+    case 'cpress': {   // a finger on the brew button
+      work(); const w = ease(clamp(pt / 0.45, 0, 1)) * (1 - ease(clamp((pt - 0.85) / 0.35, 0, 1))), press = smooth(0.45, 0.55, pt) * (1 - smooth(0.62, 0.74, pt));
+      K.btn.position.z = K.BTN_Z + 0.005 * press;
+      reach(R, (out) => K.btn.localToWorld(out.set(0, -0.007, 0)), hangR, PR, Q_PRESS, HP_TIP_R, HP.POINT, w); o.look = K.btn.getWorldPosition(_actLook);
+      if (pt > 0.55 && !A.pressed) { A.pressed = true; Sound.click(); Sound.brew(3.0); K.coffee.brew = true; K.coffee.fill = 0; }
+      if (pt >= 1.2) go('cbrew');
+      break;
+    }
+    case 'cbrew': { work(); o.look = K.cup.getWorldPosition(_actLook).add(_kv.set(0, 0.06, 0)); if (pt >= 2.6 && !K.coffee.brew) go('cgrab2'); break; }   // the machine pours (see stepKitchenFX)
+    case 'cgrab2': {
+      work(); const k = clamp(pt / 0.8, 0, 1);
+      reach(R, cupGrip, hangR, PR, Q_CUP, HP_PALM, k > 0.8 ? HP.GRIP : HP.RELAX, ease(k)); o.look = K.cup.getWorldPosition(_actLook);
+      if (k >= 1) { A.from = K.cup.position.clone(); go('csip'); }
+      break;
+    }
+    case 'csip': {   // up to his lips, a slow sip, and down beside the machine
+      work(); const M2 = mouthAt(_kv, 0.035);
+      let tilt = 0;
+      if (pt < 1.0) { const e = ease(pt / 1.0); K.cup.position.lerpVectors(A.from, M2, e); K.cup.position.y += Math.sin(Math.PI * e) * 0.04; }
+      else if (pt < 2.3) { K.cup.position.copy(M2); tilt = Math.sin(Math.PI * (pt - 1.0) / 1.3) * 0.6; K.coffee.fill = Math.min(K.coffee.fill, lerp(1, 0.55, smooth(1.3, 2.0, pt))); }
+      else { const e = ease(clamp((pt - 2.3) / 1.0, 0, 1)); K.cup.position.lerpVectors(M2, K.CUP_HOME, e); K.cup.position.y += Math.sin(Math.PI * e) * 0.04; }
+      K.cup.rotation.x = -tilt;
+      const up = smooth(0.1, 0.9, pt) * (1 - smooth(2.4, 3.1, pt));
+      hold(R, cupGrip, _kp.copy(PR).lerp(PS, up), blendQ(Q_CUP, Q_SIP, up), HP_PALM, HP.GRIP, 1);
+      o.look = pt < 2.3 ? _actLook.copy(body.pos).add(_kv2.set(0, 1.5, 1.2)) : K.cup.getWorldPosition(_actLook); o.pitch = pt > 1.0 && pt < 2.3 ? -0.12 * Math.sin(Math.PI * (pt - 1.0) / 1.3) : 0;
+      if (pt >= 3.3) { K.cup.rotation.x = 0; K.cup.position.copy(K.CUP_HOME); go('crel2'); }
+      break;
+    }
+    case 'crel2': { work(); const k = clamp(pt / 0.6, 0, 1); reach(R, cupGrip, hangR, PR, Q_CUP, HP_PALM, HP.RELAX, 1 - ease(k)); if (k >= 1) { R.w = 0; go('kleave'); } break; }
+    // ---------- tea ----------
+    case 'tknob': case 'tknob2': {   // turn the gas up under the kettle (and, after pouring, back down)
+      work(); const up = A.phase === 'tknob', w = ease(clamp(pt / 0.5, 0, 1)) * (1 - ease(clamp((pt - 1.05) / 0.4, 0, 1))), turn = smooth(0.5, 0.95, pt);
+      const k0 = up ? 0.42 : 1, k1 = up ? 1 : 0.42; K.knobs[0].rotation.y = -lerp(k0, k1, turn) * 1.9;
+      if (pt > 0.6 && !A.turned) { A.turned = true; K.stove.target = k1; if (up) Sound.gas(); else Sound.click(); }
+      reach(R, (out) => K.knobs[0].localToWorld(out.set(0, 0.026, 0)), hangR, PR, Q_KNOB, HP_PINCH, HP.PICK, w); o.look = K.knobs[0].getWorldPosition(_actLook);
+      if (pt >= 1.45) { A.turned = false; go(up ? 'theat' : 'tsip'); }
+      break;
+    }
+    case 'theat': { work(); o.look = K.kettle.localToWorld(_actLook.set(-0.12, 0.2, 0)); if (pt >= 2.2) go('tlift'); break; }   // the kettle gets going: more steam
+    case 'tlift': {   // the teapot off the kettle, by its handle
+      work(); const k = clamp(pt / 0.9, 0, 1);
+      reach(L, tpGrip, hangL, P_L, Q_TP, HP_PALM, k > 0.8 ? HP.GRIP : HP.RELAX, ease(k)); o.look = K.teapot.getWorldPosition(_actLook);
+      if (k >= 1) { A.from = K.teapot.position.clone(); K.tea.fill = 0; go('tpour'); }
+      break;
+    }
+    case 'tpour': {   // over the glass, tilted till the tea runs, a full glass, upright again
+      work(); const POUR = _kv.copy(K.GLASS_HOME).add(_kv2.set(0.128, 0.11, 0));
+      const e = ease(clamp(pt / 0.9, 0, 1)), tilt = smooth(0.8, 1.3, pt) * (1 - smooth(2.4, 2.9, pt)) * 0.72;
+      K.teapot.position.lerpVectors(A.from, POUR, e); K.teapot.position.y += Math.sin(Math.PI * e) * 0.05; K.teapot.rotation.z = tilt;
+      K.tea.pour = tilt > 0.45 ? 1 : 0; if (K.tea.pour) K.tea.fill = Math.min(1, K.tea.fill + dt / 1.2);
+      if (K.tea.pour && !A.poured) { A.poured = true; Sound.pour(1.3); }
+      hold(L, tpGrip, P_L, Q_TP, HP_PALM, HP.GRIP, 1); o.look = K.glass.getWorldPosition(_actLook).add(_kv2.set(0, 0.05, 0));
+      if (pt >= 3.0) { K.tea.pour = 0; A.from = K.teapot.position.clone(); K.teapot.rotation.z = 0; go('tback'); }
+      break;
+    }
+    case 'tback': {   // back on the kettle to keep warm
+      work(); const e = ease(clamp(pt / 0.9, 0, 1));
+      K.teapot.position.lerpVectors(A.from, K.TP_HOME, e); K.teapot.position.y += Math.sin(Math.PI * e) * 0.04;
+      reach(L, tpGrip, hangL, P_L, Q_TP, HP_PALM, pt > 0.9 ? HP.RELAX : HP.GRIP, 1 - ease(clamp((pt - 0.9) / 0.5, 0, 1))); o.look = K.teapot.getWorldPosition(_actLook);
+      if (pt >= 1.4) { K.teapot.position.copy(K.TP_HOME); L.w = 0; K.tea.warm = 1; go('tknob2'); }
+      break;
+    }
+    case 'tsip': {   // the glass to his lips, a sip, back on its saucer
+      work(); const M2 = mouthAt(_kv, 0.03);
+      let tilt = 0, w = 1;
+      if (pt < 0.8) { w = ease(pt / 0.8); }
+      else if (pt < 1.7) { const e = ease((pt - 0.8) / 0.9); K.glass.position.lerpVectors(K.GLASS_HOME, M2, e); K.glass.position.y += Math.sin(Math.PI * e) * 0.03; }
+      else if (pt < 3.0) { K.glass.position.copy(M2); tilt = Math.sin(Math.PI * (pt - 1.7) / 1.3) * 0.65; K.tea.fill = Math.min(K.tea.fill, lerp(1, 0.6, smooth(2.0, 2.7, pt))); }
+      else if (pt < 3.9) { const e = ease((pt - 3.0) / 0.9); K.glass.position.lerpVectors(M2, K.GLASS_HOME, e); K.glass.position.y += Math.sin(Math.PI * e) * 0.03; }
+      else { K.glass.position.copy(K.GLASS_HOME); w = 1 - ease(clamp((pt - 3.9) / 0.45, 0, 1)); }
+      K.glass.rotation.x = -tilt;
+      const up = smooth(0.9, 1.6, pt) * (1 - smooth(3.0, 3.8, pt));
+      if (w < 1) reach(R, glassGrip, hangR, PR, Q_CUP, HP_PALM, pt > 0.55 && pt < 3.95 ? HP.GRIP : HP.RELAX, w);
+      else hold(R, glassGrip, _kp.copy(PR).lerp(PS, up), blendQ(Q_CUP, Q_SIP, up), HP_PALM, HP.GRIP, 1);
+      o.look = pt > 1.7 && pt < 3.0 ? _actLook.copy(body.pos).add(_kv2.set(0, 1.5, 1.2)) : K.glass.getWorldPosition(_actLook); o.pitch = pt > 1.7 && pt < 3.0 ? -0.12 * Math.sin(Math.PI * (pt - 1.7) / 1.3) : 0;
+      if (pt >= 4.35) { K.glass.rotation.x = 0; R.w = 0; go('kleave'); }
+      break;
+    }
+    // ---------- back to the desk ----------
+    case 'kleave': {   // a step back from the counter before turning round (so his hands don't sweep its edge)
+      o.stand = 1; o.gait = 0; body.yaw = dampAngle(body.yaw, Math.PI, 6, dt); const e = ease(clamp(pt / 0.6, 0, 1));
+      body.pos.set(A.spot.x, 0, A.spot.z - 0.16 * e);
+      if (pt >= 0.6) { const back = { x: A.spot.x, z: A.spot.z - 0.16 }; A.W = curveOf(kitchenPath(back), true); const tn = A.W.c.getTangentAt(0.03); A.yaw1 = Math.atan2(-tn.x, -tn.z); go('kturn2'); }
+      break;
+    }
+    case 'kturn2': face(A.yaw1, 'kback'); break;
+    case 'kback': walk('kface0'); break;
+    case 'kface0': face(0, 'sitdown'); break;
+  }
+}
+function kitchenCamera(A, dt) {
+  const moving = ['krise', 'kturn', 'kwalk', 'kleave', 'kturn2', 'kback', 'kface0', 'sitdown'].includes(A.phase);
+  let p, tg;
+  if (!moving) {   // at the counter: from just behind his right shoulder and a little above, looking down onto the worktop and his hands
+    const s = A.spot; const side = A.kind === 'coffee' ? 1 : -1;   // coffee: from behind his left shoulder (the fridge stands on his right); tea: from behind his right
+    p = _av2.set(s.x + side * 0.82, 1.84, 3.06); tg = _actLook.set(s.x - side * 0.04, 1.08, 3.9);
+  } else {
+    const fwd = _av.set(-Math.sin(body.yaw), 0, -Math.cos(body.yaw));
+    p = keepInRoom(_av2.copy(body.pos).addScaledVector(fwd, -2.0).add(_av3.set(0.25, 1.85, 0.2)));
+    tg = _actLook.copy(body.pos).add(_av.set(0, 1.0, 0));
+  }
+  A.camP.lerp(p, 1 - Math.exp(-(moving ? 2.4 : 2.6) * dt)); A.camT.lerp(tg, 1 - Math.exp(-(moving ? 3 : 3) * dt));
+  camera.position.copy(A.camP); controls.target.copy(A.camT); camera.lookAt(controls.target);
+}
+// every frame: the fridge door, the flame and its kettle, the coffee and the tea
+const _kf = new V3(), _kf2 = new V3();
+function stepKitchenFX(dt, t) {
+  const K = KIT;
+  K.fridge.k = damp(K.fridge.k, K.fridge.open ? 1 : 0, 4.5, dt); K.fdoor.rotation.y = 1.5 * K.fridge.k; K.fridgeIn.emissiveIntensity = 0.85 * K.fridge.k;
+  // the flame: blue tongues that flicker, taller when turned up
+  const S = K.stove; S.level = damp(S.level, S.target, 2.2, dt);
+  K.flame.scale.set(0.9 + 0.25 * S.level, 0.45 + 0.75 * S.level, 0.9 + 0.25 * S.level);
+  K.tongues.forEach((m, i) => { m.scale.y = 0.85 + 0.25 * Math.sin(t * 23 + i * 1.7) * Math.sin(t * 7.3 + i); });
+  K.flameGlow.material.opacity = (0.3 + 0.35 * S.level) * (0.9 + 0.1 * Math.sin(t * 17)); K.flameGlow.scale.setScalar(0.2 + 0.1 * S.level);
+  const emit = (list, o, amp, rise, dx, speed) => list.forEach(s => { const k = (t * speed + s.userData.ph) % 1, ph = s.userData.ph * 9;
+    s.position.set(o.x + dx * k + Math.sin(t * 2 + ph) * 0.014 * k, o.y + rise * k, o.z + Math.cos(t * 1.7 + ph) * 0.012 * k);
+    s.material.opacity = amp * Math.sin(Math.PI * k) * (1 - 0.3 * k); s.scale.setScalar(s.userData.base * (0.6 + 1.5 * k)); });
+  const heat = 0.35 + 0.65 * smooth(0.5, 1, S.level);
+  emit(K.kSteam, K.kettle.localToWorld(_kf.copy(K.kSpout)), 0.16 * heat, 0.24 + 0.1 * heat, -0.06, 0.45 + 0.25 * heat);
+  // coffee: the machine pours for three seconds; then the cup steams for a while
+  const Cf = K.coffee; K.ledMat.emissiveIntensity = damp(K.ledMat.emissiveIntensity, Cf.brew ? 2.4 : 0.15, 6, dt);
+  if (Cf.brew) { Cf.fill = Math.min(1, Cf.fill + dt / 3.0); Cf.warm = 1; if (Cf.fill >= 1) Cf.brew = false; }
+  else Cf.warm = Math.max(0, Cf.warm - dt / 90);
+  K.cupFill(Cf.fill);
+  const onTray = K.cup.position.distanceTo(K.CUP_TRAY) < 0.01, sy = K.TOP + 0.188, ly = K.cup.position.y + 0.004 + Cf.fill * 0.052;
+  K.cstream.visible = Cf.brew && onTray; if (K.cstream.visible) { K.cstream.scale.y = Math.max(0.005, sy - ly); K.cstream.position.y = (sy + ly) / 2; }
+  emit(K.cSteam, K.cup.localToWorld(_kf.set(0, 0.07, 0)), 0.2 * smooth(0.2, 0.5, Cf.fill) * Cf.warm, 0.16, 0.0, 0.32);
+  // tea: the stream from the teapot's spout while he pours; the glass steams for a while
+  const Te = K.tea; K.teaFill(Te.fill); if (Te.pour) Te.warm = 1; else Te.warm = Math.max(0, Te.warm - dt / 90);
+  K.tstream.visible = !!Te.pour;
+  if (Te.pour) { const a = K.teapot.localToWorld(_kf.copy(K.tpSpout)), b = K.glass.localToWorld(_kf2.set(0, 0.004 + 0.055 * Te.fill, 0)); b.x = a.x; b.z = a.z;
+    K.tstream.position.set(a.x, (a.y + b.y) / 2, a.z); K.tstream.scale.y = Math.max(0.005, a.y - b.y); }
+  emit(K.gSteam, K.glass.localToWorld(_kf.set(0, 0.085, 0)), 0.18 * smooth(0.2, 0.5, Te.fill) * Te.warm, 0.14, 0.0, 0.3);
+}
+// clicking the nook (a cabinet, the worktop, the empty space): the whole kitchen in frame, floor to ceiling and wall to wall, whatever the window's shape
+function kitchenView() {
+  const tv = Math.tan(camera.fov * Math.PI / 360), cx = (KIT.OX0 + KIT.OX1) / 2;
+  const d = Math.min(Math.max(1.4 / tv, (KIT.OX1 - KIT.OX0 + 0.3) / 2 / (tv * (camera.aspect > 0 ? camera.aspect : 1.6))), 3.3);   // from the opening's plane
+  return [new V3(cx, 1.08, T_MAX.z), keepInRoom(new V3(cx, 1.42, KIT.Z0 - d))];
 }
 // headphones: reach for the stand, lift them over the head, settle them on the ears (and the reverse)
 const PH_WORN = { p: new V3(0, 0.14, 0.008), q: new THREE.Quaternion() };
@@ -4875,7 +5328,7 @@ function stepPhones(dt, o) {
       hp.position.lerpVectors(A.from.p, P.home, k); hp.position.y += Math.sin(Math.PI * k) * 0.07; hp.quaternion.slerpQuaternions(A.from.q, P.homeQ, k);
       o.look = band(_actLook); o.lean = 0.12 * Math.sin(Math.PI * k);
       if (T > 1.4) R.w = 1 - ease(clamp((T - 1.4) / 0.6, 0, 1));
-      if (T >= 2.0) { R.w = 0; P.on = false; P.anim = null; hp.position.copy(P.home); hp.quaternion.copy(P.homeQ); if (P.after === 'guitar') { P.after = null; toggleGuitar(); } }
+      if (T >= 2.0) { R.w = 0; P.on = false; P.anim = null; hp.position.copy(P.home); hp.quaternion.copy(P.homeQ); if (P.after) { const a = P.after; P.after = null; if (a === 'guitar') toggleGuitar(); else startKitchen(a); } }
     }
   }
 }
@@ -5352,6 +5805,7 @@ function frame() {
   // the Persian
   catDrive(dt, t);
   steam.forEach(s => { const k = (t * 0.35 + s.userData.ph) % 1; s.position.set(mug.position.x + Math.sin(t * 2 + s.userData.ph * 9) * 0.015 * k, mug.position.y + 0.1 + k * 0.2, mug.position.z + Math.cos(t * 1.7 + s.userData.ph * 5) * 0.01 * k); s.scale.setScalar(0.03 + k * 0.08); s.material.opacity = Math.sin(k * Math.PI) * (mugState.tilt > 0.5 ? 0.12 : 0.28); });
+  stepKitchenFX(dt, t);
   kbGlow.material.opacity = 0.14 + Math.sin(t * 0.7) * 0.03;
 
   updateOtherSide(t, dt);
