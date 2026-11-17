@@ -39,7 +39,15 @@
   .brand { top:max(18px, env(safe-area-inset-top)); left:20px; pointer-events:none; line-height:1.2; text-shadow:0 2px 16px #000; transition:opacity .5s; }
   .brand b { display:block; font-size:clamp(18px, 2.3vw, 24px); letter-spacing:.02em; color:#f8efe4; }
   .brand span { font-size:12.5px; color:var(--mute); letter-spacing:.1em; text-transform:uppercase; }
-  #tools { top:max(16px, env(safe-area-inset-top)); right:16px; display:flex; gap:8px; }
+  #tools { top:max(16px, env(safe-area-inset-top)); right:16px; display:flex; gap:8px; direction:ltr; }
+  #btnLang { font:700 13px Vazirmatn, Tahoma, system-ui, sans-serif !important; letter-spacing:0; }
+  /* Farsi: a Persian typeface everywhere in the interface (the Latin faces have no Persian letters), and no letter-spacing (it would break the joined script) */
+  html[lang=fa] body, html[lang=fa] :is(button, input, textarea, .ui, .ui *, #loader *, #go *, #nogl *):not(#cardUI, #cardUI *, #letterUI, #letterUI *) {
+    font-family:Vazirmatn, Tahoma, "Segoe UI", system-ui, sans-serif !important; letter-spacing:0 !important; }
+  html[lang=fa] #goMail .addr { font-family:"JetBrains Mono", ui-monospace, Menlo, monospace !important; direction:ltr; }
+  html[lang=fa] #botSay button { transform:scaleX(-1); }
+  html[lang=fa] :is(.lt .tx b, .lt .tx em, .paper h4, .paper .txt, .paper .rep, #letterUI input, #letterUI textarea, #tip b, #tip small) { unicode-bidi:plaintext; }
+  html[lang=fa] #chips button { direction:ltr; }   /* the repos stay English, left to right */
   #tools button { width:38px; height:38px; border-radius:12px; border:1px solid #ffffff1c; background:var(--panel); color:var(--ink);
     font-size:16px; cursor:pointer; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
   #tools button:hover { border-color:#ffffff55; }
@@ -227,49 +235,50 @@
 <div id="fx"></div>
 <div id="grain"></div>
 
-<header class="brand ui"><b>Sina Ebadi</b><span>sewyed · Backend Developer</span></header>
+<header class="brand ui"><b data-fa="سینا عبادی">Sina Ebadi</b><span data-fa="سید · توسعه‌دهنده‌ی بک‌اند">sewyed · Backend Developer</span></header>
 <div id="tools" class="ui">
-  <button id="btnSound" title="Sound on/off" aria-label="Toggle sound">🔊</button>
-  <button id="btnHome" title="Reset view (R)" aria-label="Reset view">⟲</button>
+  <button id="btnLang" title="فارسی" data-fa-title="English" aria-label="Switch language: English / Farsi" data-fa="EN">فا</button>
+  <button id="btnSound" title="Sound on/off" data-fa-title="صدا روشن / خاموش" aria-label="Toggle sound">🔊</button>
+  <button id="btnHome" title="Reset view (R)" data-fa-title="برگشت به نمای اول (R)" aria-label="Reset view">⟲</button>
 </div>
-<nav id="dock" class="ui" aria-label="Links">
-  <button data-id="github"><i style="background:#a371f7"></i>GitHub</button>
-  <button data-id="telegram"><i style="background:#2AABEE"></i>Telegram</button>
-  <button data-id="gems"><i style="background:#b88cff"></i>Crystals</button>
-  <button data-id="repos"><i style="background:#e9d6ad"></i>Repos</button>
-  <button data-id="library"><i style="background:#c4a46a"></i>Library</button>
-  <button data-id="window"><i style="background:#9fb4ff"></i>Window</button>
-  <button data-id="door"><i style="background:#cfe0ff"></i>Door</button>
-  <button data-id="mailbox" id="dockMail"><i style="background:#d9573f"></i>Mailbox</button>
-  <button data-id="coffee"><i style="background:#d9924a"></i>Coffee</button>
-  <button data-id="mail"><i style="background:#8fbaff"></i>Email</button>
-  <button data-id="lofi" id="dockLofi"><i style="background:#f2c46d"></i>Lo-fi</button>
-  <button data-id="kitchen"><i style="background:#d9b38c"></i>Kitchen</button>
+<nav id="dock" class="ui" aria-label="Links" data-fa-aria-label="لینک‌ها">
+  <button data-id="github" data-fa="گیت‌هاب"><i style="background:#a371f7"></i>GitHub</button>
+  <button data-id="telegram" data-fa="تلگرام"><i style="background:#2AABEE"></i>Telegram</button>
+  <button data-id="gems" data-fa="کریستال‌ها"><i style="background:#b88cff"></i>Crystals</button>
+  <button data-id="repos" data-fa="ریپوها"><i style="background:#e9d6ad"></i>Repos</button>
+  <button data-id="library" data-fa="کتابخانه"><i style="background:#c4a46a"></i>Library</button>
+  <button data-id="window" data-fa="پنجره"><i style="background:#9fb4ff"></i>Window</button>
+  <button data-id="door" data-fa="در"><i style="background:#cfe0ff"></i>Door</button>
+  <button data-id="mailbox" id="dockMail" data-fa="صندوق نامه"><i style="background:#d9573f"></i>Mailbox</button>
+  <button data-id="coffee" data-fa="قهوه"><i style="background:#d9924a"></i>Coffee</button>
+  <button data-id="mail" data-fa="ایمیل"><i style="background:#8fbaff"></i>Email</button>
+  <button data-id="lofi" id="dockLofi" data-fa="لوفای"><i style="background:#f2c46d"></i>Lo-fi</button>
+  <button data-id="kitchen" data-fa="آشپزخانه"><i style="background:#d9b38c"></i>Kitchen</button>
 </nav>
 <div id="shelfUI" class="ui"><div class="panel">
-  <div class="head"><div><b id="shelfTitle">Repositories</b> <span id="shelfHint"></span></div><div class="hb"><button id="shelfSide">Door &amp; mailbox →</button><button id="shelfBack">← Room</button></div></div>
+  <div class="head"><div><b id="shelfTitle">Repositories</b> <span id="shelfHint"></span></div><div class="hb"><button id="shelfSide">Door &amp; mailbox →</button><button id="shelfBack" data-fa="→ اتاق">← Room</button></div></div>
   <div id="chips"></div>
 </div></div>
 <div id="winUI" class="ui"><div class="panel">
-  <div class="head"><div><b>Window</b> <span id="winHint"></span></div><button id="winBack">← Back to the room</button></div>
+  <div class="head"><div><b data-fa="پنجره">Window</b> <span id="winHint"></span></div><button id="winBack" data-fa="→ برگشت به اتاق">← Back to the room</button></div>
   <div id="winInfo"></div>
 </div></div>
 <div id="libUI" class="ui"><div class="panel">
-  <div class="head"><div><b>Library</b> <span id="libHint"></span></div><button id="libBack">← Back to the room</button></div>
+  <div class="head"><div><b data-fa="کتابخانه">Library</b> <span id="libHint"></span></div><button id="libBack" data-fa="→ برگشت به اتاق">← Back to the room</button></div>
 </div></div>
-<div id="cardUI" class="ui"><div class="panel">
+<div id="cardUI" class="ui" lang="en" dir="ltr"><div class="panel">
   <button class="btn" id="cardBack" type="button">← Back inside</button>
   <span class="tip2" id="cardTip"></span>
   <button class="btn" id="cardSave" type="button">Save contact</button>
   <button class="btn hi" id="cardWrite" type="button">Write a letter ✉</button>
 </div></div>
 <div id="mailUI" class="ui" aria-label="Mailbox"><div class="panel">
-  <div class="head"><div><b>Mailbox</b><span id="mailCount"></span></div><button class="btn" id="mailBack" type="button">← Back</button></div>
+  <div class="head"><div><b data-fa="صندوق نامه">Mailbox</b><span id="mailCount"></span></div><button class="btn" id="mailBack" type="button" data-fa="→ برگشت">← Back</button></div>
   <div id="mailList"></div>
   <div id="mailRead" hidden></div>
-  <div class="foot"><span>Letters are GitHub Discussions · <a id="mailAll" href="#" target="_blank" rel="noopener">see all ↗</a></span><button class="btn hi" id="mailWrite" type="button">Write one ✉</button></div>
+  <div class="foot"><span><span data-fa="نامه‌ها همان GitHub Discussions هستند">Letters are GitHub Discussions</span> · <a id="mailAll" href="#" target="_blank" rel="noopener" data-fa="دیدن همه ↗">see all ↗</a></span><button class="btn hi" id="mailWrite" type="button" data-fa="یکی بنویس ✉">Write one ✉</button></div>
 </div></div>
-<div id="letterUI" class="ui" role="dialog" aria-modal="true" aria-label="Write a letter"><form class="paper" id="letterForm" onsubmit="return false">
+<div id="letterUI" class="ui" lang="en" dir="ltr" role="dialog" aria-modal="true" aria-label="Write a letter"><form class="paper" id="letterForm" onsubmit="return false">
   <button class="x" id="letterClose" type="button" aria-label="Close">×</button>
   <h3>Dear Sina,</h3>
   <input id="lTitle" maxlength="120" placeholder="Subject" autocomplete="off">
@@ -281,16 +290,16 @@
 <div id="botSay" class="ui" role="status" aria-live="polite"><p id="botText"></p><small id="botN"></small><button id="botNext" type="button" aria-label="Next">›</button></div>
 <div id="fade"></div>
 <div id="hint" class="ui"></div>
-<footer id="credit" class="ui">Made by Sina Ebadi</footer>
+<footer id="credit" class="ui" data-fa="ساخته‌ی سینا عبادی">Made by Sina Ebadi</footer>
 <div id="tip" class="ui"></div>
 <div id="go"><div><div id="goMail" hidden><div class="addr">cnaebadii@yahoo.com</div><button id="goCopy" type="button">Copy address</button></div><a id="goLink" href="#" target="_blank" rel="noopener">Open ↗</a><button id="goBack">← back to the room</button></div></div>
-<div id="loader"><div class="box"><svg class="neon" viewBox="-410 -265 820 530" role="img" aria-label="Syd"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><g stroke="#2f7bff" stroke-width="24" opacity=".42"><rect x="-380" y="-235" width="760" height="470" rx="85"/><path d="M-91.2 -125.0 C-103.8 -139.6 -112.6 -160.3 -128.8 -168.8 C-145.6 -177.5 -171.8 -179.9 -191.3 -175.0 C-211.5 -170.0 -238.6 -154.2 -247.5 -137.5 C-255.7 -122.3 -255.3 -97.3 -247.5 -81.2 C-238.7 -63.2 -210.9 -51.0 -191.3 -37.5 C-171.4 -23.9 -144.6 -16.3 -128.8 -0.0 C-113.9 15.4 -99.6 36.5 -97.5 56.2 C-95.4 76.1 -102.9 104.2 -116.3 118.8 C-129.8 133.5 -157.8 142.8 -178.8 143.8 C-199.4 144.7 -225.8 135.9 -241.3 125.0 C-254.3 115.8 -259.6 100.0 -268.8 87.5 M-72.5 12.5 C-64.2 -3.3 -54.8 -35.2 -47.5 -35.0 C-41.3 -34.8 -34.8 -13.4 -31.2 -0.0 C-26.9 16.2 -31.5 40.8 -26.3 56.2 C-22.0 68.8 -15.1 84.4 -6.2 87.5 C1.9 90.4 15.6 84.7 23.8 77.5 C34.2 68.3 40.6 48.6 46.2 31.2 C52.9 11.0 57.3 -37.7 58.8 -37.5 C60.4 -37.3 56.6 20.4 53.7 50.0 C50.8 80.8 48.6 116.4 41.2 143.8 C35.1 166.4 28.6 197.1 16.2 203.8 C7.5 208.5 -10.3 204.3 -16.2 197.5 C-22.6 190.3 -23.1 172.0 -18.8 160.0 C-13.4 145.1 5.5 128.7 21.2 117.5 C37.4 106.0 62.4 98.1 77.5 92.5 C87.4 88.8 94.2 87.5 102.5 85.0 M206.2 -15.0 C196.2 -25.0 187.8 -42.1 176.3 -45.0 C165.2 -47.8 148.7 -42.2 138.8 -33.8 C126.7 -23.5 116.6 -0.3 113.7 17.5 C110.9 35.1 112.3 60.4 121.2 72.5 C129.0 83.0 147.2 91.5 158.8 90.0 C170.5 88.4 183.2 74.4 191.2 62.5 C200.2 49.2 202.1 29.2 207.5 12.5 M248.8 -197.5 C244.6 -170.0 241.1 -143.8 236.3 -115.0 C230.9 -83.2 223.2 -45.9 217.5 -15.0 C212.5 11.8 202.4 39.8 203.8 60.0 C204.7 74.0 207.4 90.7 215.0 95.0 C222.1 99.0 237.4 93.0 246.3 87.5 C255.5 81.7 261.3 69.2 268.8 60.0"/></g><g stroke="#e4efff" stroke-width="9"><rect x="-380" y="-235" width="760" height="470" rx="85"/><path d="M-91.2 -125.0 C-103.8 -139.6 -112.6 -160.3 -128.8 -168.8 C-145.6 -177.5 -171.8 -179.9 -191.3 -175.0 C-211.5 -170.0 -238.6 -154.2 -247.5 -137.5 C-255.7 -122.3 -255.3 -97.3 -247.5 -81.2 C-238.7 -63.2 -210.9 -51.0 -191.3 -37.5 C-171.4 -23.9 -144.6 -16.3 -128.8 -0.0 C-113.9 15.4 -99.6 36.5 -97.5 56.2 C-95.4 76.1 -102.9 104.2 -116.3 118.8 C-129.8 133.5 -157.8 142.8 -178.8 143.8 C-199.4 144.7 -225.8 135.9 -241.3 125.0 C-254.3 115.8 -259.6 100.0 -268.8 87.5 M-72.5 12.5 C-64.2 -3.3 -54.8 -35.2 -47.5 -35.0 C-41.3 -34.8 -34.8 -13.4 -31.2 -0.0 C-26.9 16.2 -31.5 40.8 -26.3 56.2 C-22.0 68.8 -15.1 84.4 -6.2 87.5 C1.9 90.4 15.6 84.7 23.8 77.5 C34.2 68.3 40.6 48.6 46.2 31.2 C52.9 11.0 57.3 -37.7 58.8 -37.5 C60.4 -37.3 56.6 20.4 53.7 50.0 C50.8 80.8 48.6 116.4 41.2 143.8 C35.1 166.4 28.6 197.1 16.2 203.8 C7.5 208.5 -10.3 204.3 -16.2 197.5 C-22.6 190.3 -23.1 172.0 -18.8 160.0 C-13.4 145.1 5.5 128.7 21.2 117.5 C37.4 106.0 62.4 98.1 77.5 92.5 C87.4 88.8 94.2 87.5 102.5 85.0 M206.2 -15.0 C196.2 -25.0 187.8 -42.1 176.3 -45.0 C165.2 -47.8 148.7 -42.2 138.8 -33.8 C126.7 -23.5 116.6 -0.3 113.7 17.5 C110.9 35.1 112.3 60.4 121.2 72.5 C129.0 83.0 147.2 91.5 158.8 90.0 C170.5 88.4 183.2 74.4 191.2 62.5 C200.2 49.2 202.1 29.2 207.5 12.5 M248.8 -197.5 C244.6 -170.0 241.1 -143.8 236.3 -115.0 C230.9 -83.2 223.2 -45.9 217.5 -15.0 C212.5 11.8 202.4 39.8 203.8 60.0 C204.7 74.0 207.4 90.7 215.0 95.0 C222.1 99.0 237.4 93.0 246.3 87.5 C255.5 81.7 261.3 69.2 268.8 60.0"/></g></g></svg><div class="bar"><i></i></div><div class="s">LOADING THE 3D ENGINE</div><div class="err" id="bootErr"></div><div class="more"><span id="bootWhy">Taking longer than usual: the 3D engine is still downloading.</span><br><a href="https://github.com/cnaebadi">GitHub</a> · <a href="https://t.me/sewyed">Telegram</a> · <a href="https://www.coffeete.ir/sewyed">Coffee</a><br><button id="bootRetry" type="button">Try again</button></div></div></div>
+<div id="loader"><div class="box"><svg class="neon" viewBox="-410 -265 820 530" role="img" aria-label="Syd"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><g stroke="#2f7bff" stroke-width="24" opacity=".42"><rect x="-380" y="-235" width="760" height="470" rx="85"/><path d="M-91.2 -125.0 C-103.8 -139.6 -112.6 -160.3 -128.8 -168.8 C-145.6 -177.5 -171.8 -179.9 -191.3 -175.0 C-211.5 -170.0 -238.6 -154.2 -247.5 -137.5 C-255.7 -122.3 -255.3 -97.3 -247.5 -81.2 C-238.7 -63.2 -210.9 -51.0 -191.3 -37.5 C-171.4 -23.9 -144.6 -16.3 -128.8 -0.0 C-113.9 15.4 -99.6 36.5 -97.5 56.2 C-95.4 76.1 -102.9 104.2 -116.3 118.8 C-129.8 133.5 -157.8 142.8 -178.8 143.8 C-199.4 144.7 -225.8 135.9 -241.3 125.0 C-254.3 115.8 -259.6 100.0 -268.8 87.5 M-72.5 12.5 C-64.2 -3.3 -54.8 -35.2 -47.5 -35.0 C-41.3 -34.8 -34.8 -13.4 -31.2 -0.0 C-26.9 16.2 -31.5 40.8 -26.3 56.2 C-22.0 68.8 -15.1 84.4 -6.2 87.5 C1.9 90.4 15.6 84.7 23.8 77.5 C34.2 68.3 40.6 48.6 46.2 31.2 C52.9 11.0 57.3 -37.7 58.8 -37.5 C60.4 -37.3 56.6 20.4 53.7 50.0 C50.8 80.8 48.6 116.4 41.2 143.8 C35.1 166.4 28.6 197.1 16.2 203.8 C7.5 208.5 -10.3 204.3 -16.2 197.5 C-22.6 190.3 -23.1 172.0 -18.8 160.0 C-13.4 145.1 5.5 128.7 21.2 117.5 C37.4 106.0 62.4 98.1 77.5 92.5 C87.4 88.8 94.2 87.5 102.5 85.0 M206.2 -15.0 C196.2 -25.0 187.8 -42.1 176.3 -45.0 C165.2 -47.8 148.7 -42.2 138.8 -33.8 C126.7 -23.5 116.6 -0.3 113.7 17.5 C110.9 35.1 112.3 60.4 121.2 72.5 C129.0 83.0 147.2 91.5 158.8 90.0 C170.5 88.4 183.2 74.4 191.2 62.5 C200.2 49.2 202.1 29.2 207.5 12.5 M248.8 -197.5 C244.6 -170.0 241.1 -143.8 236.3 -115.0 C230.9 -83.2 223.2 -45.9 217.5 -15.0 C212.5 11.8 202.4 39.8 203.8 60.0 C204.7 74.0 207.4 90.7 215.0 95.0 C222.1 99.0 237.4 93.0 246.3 87.5 C255.5 81.7 261.3 69.2 268.8 60.0"/></g><g stroke="#e4efff" stroke-width="9"><rect x="-380" y="-235" width="760" height="470" rx="85"/><path d="M-91.2 -125.0 C-103.8 -139.6 -112.6 -160.3 -128.8 -168.8 C-145.6 -177.5 -171.8 -179.9 -191.3 -175.0 C-211.5 -170.0 -238.6 -154.2 -247.5 -137.5 C-255.7 -122.3 -255.3 -97.3 -247.5 -81.2 C-238.7 -63.2 -210.9 -51.0 -191.3 -37.5 C-171.4 -23.9 -144.6 -16.3 -128.8 -0.0 C-113.9 15.4 -99.6 36.5 -97.5 56.2 C-95.4 76.1 -102.9 104.2 -116.3 118.8 C-129.8 133.5 -157.8 142.8 -178.8 143.8 C-199.4 144.7 -225.8 135.9 -241.3 125.0 C-254.3 115.8 -259.6 100.0 -268.8 87.5 M-72.5 12.5 C-64.2 -3.3 -54.8 -35.2 -47.5 -35.0 C-41.3 -34.8 -34.8 -13.4 -31.2 -0.0 C-26.9 16.2 -31.5 40.8 -26.3 56.2 C-22.0 68.8 -15.1 84.4 -6.2 87.5 C1.9 90.4 15.6 84.7 23.8 77.5 C34.2 68.3 40.6 48.6 46.2 31.2 C52.9 11.0 57.3 -37.7 58.8 -37.5 C60.4 -37.3 56.6 20.4 53.7 50.0 C50.8 80.8 48.6 116.4 41.2 143.8 C35.1 166.4 28.6 197.1 16.2 203.8 C7.5 208.5 -10.3 204.3 -16.2 197.5 C-22.6 190.3 -23.1 172.0 -18.8 160.0 C-13.4 145.1 5.5 128.7 21.2 117.5 C37.4 106.0 62.4 98.1 77.5 92.5 C87.4 88.8 94.2 87.5 102.5 85.0 M206.2 -15.0 C196.2 -25.0 187.8 -42.1 176.3 -45.0 C165.2 -47.8 148.7 -42.2 138.8 -33.8 C126.7 -23.5 116.6 -0.3 113.7 17.5 C110.9 35.1 112.3 60.4 121.2 72.5 C129.0 83.0 147.2 91.5 158.8 90.0 C170.5 88.4 183.2 74.4 191.2 62.5 C200.2 49.2 202.1 29.2 207.5 12.5 M248.8 -197.5 C244.6 -170.0 241.1 -143.8 236.3 -115.0 C230.9 -83.2 223.2 -45.9 217.5 -15.0 C212.5 11.8 202.4 39.8 203.8 60.0 C204.7 74.0 207.4 90.7 215.0 95.0 C222.1 99.0 237.4 93.0 246.3 87.5 C255.5 81.7 261.3 69.2 268.8 60.0"/></g></g></svg><div class="bar"><i></i></div><div class="s" data-fa="در حال بارگذاری موتور سه‌بعدی">LOADING THE 3D ENGINE</div><div class="err" id="bootErr"></div><div class="more"><span id="bootWhy" data-fa="بیشتر از همیشه طول کشیده: موتور سه‌بعدی هنوز در حال دانلود است.">Taking longer than usual: the 3D engine is still downloading.</span><br><a href="https://github.com/cnaebadi">GitHub</a> · <a href="https://t.me/sewyed">Telegram</a> · <a href="https://www.coffeete.ir/sewyed">Coffee</a><br><button id="bootRetry" type="button" data-fa="دوباره امتحان کن">Try again</button></div></div></div>
 <div id="nogl"><div>
-  <h2>Sina Ebadi · sewyed</h2><p>Backend Developer</p>
+  <h2 data-fa="سینا عبادی · سید">Sina Ebadi · sewyed</h2><p data-fa="توسعه‌دهنده‌ی بک‌اند">Backend Developer</p>
   <a href="https://github.com/cnaebadi">github.com/cnaebadi</a>
   <a href="https://t.me/sewyed">t.me/sewyed</a>
-  <a href="https://www.coffeete.ir/sewyed">Buy me a coffee</a>
-  <p>Made by Sina Ebadi</p>
+  <a href="https://www.coffeete.ir/sewyed" data-fa="یک قهوه مهمانم کن">Buy me a coffee</a>
+  <p data-fa="ساخته‌ی سینا عبادی">Made by Sina Ebadi</p>
 </div></div>
 <noscript><p style="position:fixed;inset:0;display:grid;place-items:center">
   <span><a href="https://github.com/cnaebadi">GitHub</a> · <a href="https://t.me/sewyed">Telegram</a> · <a href="https://www.coffeete.ir/sewyed">Coffee</a></span></p></noscript>
@@ -299,7 +308,35 @@
 (() => {
   const t0 = performance.now(), $ = id => document.getElementById(id);
   const B = window.Boot = { started: false, log: [] };
-  B.step = (label) => { B.log.push([label, Math.round(performance.now() - t0)]); const e = document.querySelector('#loader .s'); if (e) e.textContent = label; };
+  // the interface speaks English or Farsi (the switch by the sound button); it always opens in English
+  B.lang = 'en';   // every visit opens in English; the switch only changes the page being viewed
+  B.FA_STEPS = {
+    'LOADING THE 3D ENGINE': 'در حال بارگذاری موتور سه‌بعدی', 'COULD NOT LOAD THE 3D ENGINE': 'موتور سه‌بعدی بارگذاری نشد', 'WARMING UP': 'در حال گرم شدن',
+    'MIXING THE PAINT': 'هم زدن رنگ', 'PLASTERING THE WALLS': 'گچ‌کاری دیوارها', 'SANDING THE FLOOR': 'سنباده زدن کف', 'POLISHING THE FLOOR': 'برق انداختن کف',
+    'STAINING THE WOOD': 'رنگ زدن چوب', 'BUILDING THE ROOM': 'ساختن اتاق', 'OPENING THE WINDOW': 'باز کردن پنجره', 'HANGING THE DOOR': 'نصب کردن در',
+    'WEAVING THE RUG': 'بافتن فرش', 'KNITTING THE THROW': 'بافتن روانداز', 'FLUFFING THE PILLOWS': 'پف دادن بالش‌ها', 'SETTING UP THE DESK': 'چیدن میز',
+    'PULLING UP A CHAIR': 'جلو کشیدن صندلی', 'SHELVING THE REPOS': 'چیدن ریپوها در قفسه', 'PUTTING THE KETTLE ON': 'گذاشتن کتری روی گاز',
+    'TURNING ON THE LAMPS': 'روشن کردن چراغ‌ها', 'WAKING NOBODY UP': 'آرام، کسی بیدار نشود',
+  };
+  B.tr = (label) => B.lang === 'fa' ? (B.FA_STEPS[label] || label.replace(/^TRYING ANOTHER SERVER/, 'امتحان یک سرور دیگر')) : label;
+  // every element with data-fa (and data-fa-title / -placeholder / -aria-label) swaps its last line of text (or that attribute) with the language
+  B.applyStatic = () => {
+    const fa = B.lang === 'fa', root = document.documentElement; root.lang = B.lang; root.dir = fa ? 'rtl' : 'ltr';
+    for (const el of document.querySelectorAll('[data-fa]')) {
+      let n = [...el.childNodes].reverse().find(c => c.nodeType === 3 && c.nodeValue.trim()); if (!n) { n = document.createTextNode(''); el.appendChild(n); }
+      if (el.dataset.en == null) el.dataset.en = n.nodeValue;
+      n.nodeValue = fa ? el.dataset.fa : el.dataset.en;
+    }
+    for (const a of ['title', 'placeholder', 'aria-label']) for (const el of document.querySelectorAll('[data-fa-' + a + ']')) {
+      const k = 'en' + a.replace('-', ''); if (el.dataset[k] == null) el.dataset[k] = el.getAttribute(a) || '';
+      el.setAttribute(a, fa ? el.getAttribute('data-fa-' + a) : el.dataset[k]);
+    }
+    if (fa && !B.faFont) {   // Vazirmatn for the Persian text; until (or unless) it arrives, the system's Persian face stands in
+      B.faFont = true; const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css'; document.head.appendChild(l);
+    }
+  };
+  if (B.lang === 'fa') B.applyStatic();
+  B.step = (label) => { B.log.push([label, Math.round(performance.now() - t0)]); const e = document.querySelector('#loader .s'); if (e) e.textContent = B.tr(label); };
   B.error = (err) => {
     if (B.started) return;
     const m = err && (err.message || (err.reason && err.reason.message)) || String(err || '');
@@ -353,7 +390,7 @@ for (const [name, core, addon] of ENGINES) {
     break;
   } catch (e) { libErr = e; LIBS = null; }
 }
-if (!LIBS) { Boot.step('COULD NOT LOAD THE 3D ENGINE'); $l('#loader').classList.add('stuck'); $l('#bootWhy').textContent = 'This connection could not reach the 3D engine servers. Try again, or open the links:'; Boot.error(new Error((libErr && libErr.message) || 'network error')); await new Promise(() => {}); }   // stop here quietly; the loader shows the links
+if (!LIBS) { Boot.step('COULD NOT LOAD THE 3D ENGINE'); $l('#loader').classList.add('stuck'); $l('#bootWhy').textContent = Boot.lang === 'fa' ? 'این اتصال به سرورهای موتور سه‌بعدی نرسید. دوباره امتحان کن، یا لینک‌ها را باز کن:' : 'This connection could not reach the 3D engine servers. Try again, or open the links:'; Boot.error(new Error((libErr && libErr.message) || 'network error')); await new Promise(() => {}); }   // stop here quietly; the loader shows the links
 const [THREE, { OrbitControls }, { EffectComposer }, { RenderPass }, { UnrealBloomPass }, { ShaderPass }, { OutputPass }, { RoomEnvironment }, { RoundedBoxGeometry }, { mergeGeometries }] = LIBS;
 
 /* =====================================================================
@@ -439,11 +476,31 @@ const UP = new V3(0, 1, 0);
 const rand = (a, b) => a + Math.random() * (b - a);
 function hash(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
 const $ = s => document.querySelector(s);
-$('#hint').textContent = isTouch
-  ? 'Drag to look · Pinch to zoom · Tap the little robot for help'
-  : 'Drag to look · Scroll to zoom · Click the little robot on the desk for help';
-$('#cardTip').textContent = isTouch ? 'drag to tilt · tap a line to open it' : 'drag to tilt · click a line to open it · the slot takes letters';
-$('#shelfHint').textContent = isTouch ? 'tap a book to open it' : 'click a book to open it';
+// ---- language: English or Farsi. Repo names, their descriptions and the library stay in English. ----
+let LANG = Boot.lang;
+const tr = (en, fa) => LANG === 'fa' ? fa : en, trL = tr;
+const num = (n) => n.toLocaleString(LANG === 'fa' ? 'fa-IR' : 'en');
+const FA_NAMES = {   // id: [label, host] (host null: keep the English one, e.g. an address)
+  github: ['گیت‌هاب', null], vscode: ['VS Code', null], ubuntu: ['اوبونتو', null], telegram: ['تلگرام', null], coffee: ['یک قهوه مهمانم کن', null], mail: ['ایمیل', null],
+  gems: ['کریستال‌ها و انگشترها', 't.me/S0L8K · برای اینستاگرام ۳ ثانیه نگه دار'], insta: ['اینستاگرام', null],
+  lofi: ['رادیو لوفای', 'پخش / توقف صفحه'], persian: ['گربه‌ی خواب', 'بیدارش کن… اگر جرئت داری'], plasma: ['گوی پلاسما', 'انگشتت را رویش نگه دار'],
+  monstera: ['مونسترا', 'بیرون پنجره را ببین'], pothosL: ['پوتوس', 'بیرون پنجره را ببین'], lamp: ['آباژور ایستاده', 'روشن / خاموش'], sconce: ['چراغ دیواری', 'روشن / خاموش'],
+  window: ['پنجره', 'بیرون را ببین'], repos: ['ریپوها', 'از نزدیک ببین'], door: ['در', 'برو بیرون، روی کارت'], mailbox: ['صندوق نامه', 'بازش کن'],
+  bot: ['ربات میز', 'بزن تا راهنمایی‌ات کند'], guitar: ['گیتار', 'کنار پنجره چیزی بزن'], phones: ['هدفون', 'بگذارش روی گوش'],
+  curtains: ['پرده‌ها', 'ببندشان'], library: ['کتابخانه', 'معروف‌ترین ریپوهای GitHub'], rose: ['گل رز زیر شیشه', 'خوب گوش کن'], cabinet: ['کمد صفحه‌ها', 'از نزدیک ببین'],
+  kitchen: ['آشپزخانه', 'قهوه، چای…'], espresso: ['اسپرسوساز', 'یک قهوه درست کن'], stove: ['چای روی گاز', 'یک استکان چای بریز'], fridge: ['یخچال', 'بازش کن'],
+  klamp: ['چراغ آشپزخانه', 'روشن / خاموش'],
+};
+function loc(id, L) { if (!L || LANG !== 'fa') return L; const f = FA_NAMES[id]; return f ? { ...L, label: f[0], host: f[1] != null ? f[1] : L.host } : L; }
+function syncHints() {
+  $('#hint').textContent = isTouch
+    ? tr('Drag to look · Pinch to zoom · Tap the little robot for help', 'بکش تا ببینی · با دو انگشت زوم کن · برای راهنما روی ربات کوچک بزن')
+    : tr('Drag to look · Scroll to zoom · Click the little robot on the desk for help', 'بکش تا ببینی · با اسکرول زوم کن · برای راهنما روی ربات کوچک روی میز کلیک کن');
+  $('#cardTip').textContent = isTouch ? 'drag to tilt · tap a line to open it' : 'drag to tilt · click a line to open it · the slot takes letters';   // the outside stays English
+  $('#shelfHint').textContent = isTouch ? tr('tap a book to open it', 'روی یک کتاب بزن تا باز شود') : tr('click a book to open it', 'روی یک کتاب کلیک کن تا باز شود');
+  $('#winHint').textContent = tr('outside follows your clock', 'بیرون با ساعت تو پیش می‌رود');
+}
+syncHints();
 
 await fontsReady;
 await tick('MIXING THE PAINT');
@@ -3415,7 +3472,7 @@ const postEnv = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.003, 0.13), new THR
   slotFlap.position.set(CARD.face + 0.015, SLOT.y + SLOT.h / 2 + 0.008, SLOT.z); OUT.add(slotFlap);
   mk(rbox(0.004, SLOT.h + 0.022, SLOT.w + 0.022, 0.0018), brass, 0.002, -(SLOT.h + 0.022) / 2, 0, slotFlap, false);
   mk(new THREE.PlaneGeometry(0.42, 0.1), new THREE.MeshBasicMaterial({ color: '#000000' }), CARD.x + 0.002, SLOT.y, SLOT.z, OUT, false).rotation.y = Math.PI / 2;
-  const sp = mk(new THREE.BoxGeometry(0.03, 0.46, 0.76), INVIS, CARD.face + 0.016, SLOT.y - 0.02, SLOT.z, OUT, false);   // the plate + 'LETTERS' + 'drop me a letter' sp.userData.id = 'slot'; cardPick.push(sp);
+  const sp = mk(new THREE.BoxGeometry(0.03, 0.46, 0.76), INVIS, CARD.face + 0.016, SLOT.y - 0.02, SLOT.z, OUT, false); sp.userData.id = 'slot'; cardPick.push(sp);   // the plate + 'LETTERS' + 'drop me a letter': a click opens the letter
   // tap targets over the printed lines (canvas pixel rects of the card art)
   const hot = (id, X0, Y0, X1, Y1) => {
     const a = cardWorld(X0, Y0), b = cardWorld(X1, Y1);
@@ -4032,15 +4089,15 @@ function screenTouch(id, worldPoint) {
   return { p: m.screen.localToWorld(new V3(local.x, local.y, 0.004)), n: new V3(0, 0, 1).transformDirection(m.screen.matrixWorld), uv: { u: local.x / m.W + 0.5, v: local.y / m.H + 0.5 } };
 }
 function infoFor(id) {
-  if (id === 'window') return { ...ACTIONS.window, host: view === 'window' ? 'call the thunder' : 'look outside' };
-  if (id === 'guitar') return { ...ACTIONS.guitar, host: act ? (act.phase === 'play' ? 'put it back' : 'one moment…') : ACTIONS.guitar.host };
-  if (id === 'phones') return { ...ACTIONS.phones, host: PHONES.on ? 'take them off' : 'put them on' };
-  if (id === 'curtains') return { ...ACTIONS.curtains, host: CURTAINS.want ? 'open them' : 'close them' };
-  if (id === 'fridge') return { ...ACTIONS.fridge, host: KIT.fridge.open ? 'close it' : 'open it' };
-  if ((id === 'espresso' || id === 'stove') && act && act.kind) return { ...ACTIONS[id], host: 'one moment…' };
-  if (id && id.startsWith('candle:')) { const c = CANDLES[+id.slice(7)]; return c ? { label: 'Candle', host: c.on ? 'blow it out' : 'light it again', c1: '#ffb04a' } : null; }
-  if (id === 'mailbox') { const n = MAIL.total || MAIL.letters.length; return { ...ACTIONS.mailbox, host: MAIL.state === 'ok' || MAIL.demo ? (n ? `${n.toLocaleString('en')} letter${n > 1 ? 's' : ''}${hasNew() ? ' · new' : ''} · open it` : 'empty · write the first letter') : 'open it' }; }
-  return LINKS[id] || ACTIONS[id] || CARD_LINKS[id] || null;
+  if (id === 'window') return { ...loc(id, ACTIONS.window), host: view === 'window' ? tr('call the thunder', 'رعد و برق را صدا کن') : tr('look outside', 'بیرون را ببین') };
+  if (id === 'guitar') return { ...loc(id, ACTIONS.guitar), ...(act ? { host: act.phase === 'play' ? tr('put it back', 'بگذارش سر جایش') : tr('one moment…', 'یک لحظه…') } : {}) };
+  if (id === 'phones') return { ...loc(id, ACTIONS.phones), host: PHONES.on ? tr('take them off', 'برشان دار') : tr('put them on', 'بگذارش روی گوش') };
+  if (id === 'curtains') return { ...loc(id, ACTIONS.curtains), host: CURTAINS.want ? tr('open them', 'بازشان کن') : tr('close them', 'ببندشان') };
+  if (id === 'fridge') return { ...loc(id, ACTIONS.fridge), host: KIT.fridge.open ? tr('close it', 'ببندش') : tr('open it', 'بازش کن') };
+  if ((id === 'espresso' || id === 'stove') && act && act.kind) return { ...loc(id, ACTIONS[id]), host: tr('one moment…', 'یک لحظه…') };
+  if (id && id.startsWith('candle:')) { const c = CANDLES[+id.slice(7)]; return c ? { label: tr('Candle', 'شمع'), host: c.on ? tr('blow it out', 'فوتش کن') : tr('light it again', 'دوباره روشنش کن'), c1: '#ffb04a' } : null; }
+  if (id === 'mailbox') { const n = MAIL.total || MAIL.letters.length; return { ...loc(id, ACTIONS.mailbox), host: MAIL.state === 'ok' || MAIL.demo ? (n ? tr(`${num(n)} letter${n > 1 ? 's' : ''}${hasNew() ? ' · new' : ''} · open it`, `${num(n)} نامه${hasNew() ? ' · تازه' : ''} · بازش کن`) : tr('empty · write the first letter', 'خالی · اولین نامه را تو بنویس')) : tr('open it', 'بازش کن') }; }
+  return loc(id, LINKS[id] || ACTIONS[id] || CARD_LINKS[id] || null);
 }
 function showTip(id, x, y) {
   const L = infoFor(id); if (!L) { tip.style.opacity = 0; tipFor = null; return; }
@@ -4174,9 +4231,9 @@ $('#shelfBack').onclick = () => leaveShelf();
 $('#shelfSide').onclick = () => { shelfUWant = shelfUWant > 0.5 ? 0 : 1; syncShelfSide(); };
 function syncShelfSide() {
   const side = shelfUWant > 0.5; $('#shelfUI').classList.toggle('side', side);
-  $('#shelfSide').textContent = side ? '← Books' : 'Door & mailbox →';
-  $('#shelfTitle').textContent = side ? 'Door & mailbox' : 'Repositories';
-  $('#shelfHint').textContent = side ? (isTouch ? 'tap the door or the mailbox' : 'click the door or the mailbox') : (isTouch ? 'tap a book · swipe ← to turn' : 'click a book · drag ← to turn');
+  $('#shelfSide').textContent = side ? tr('← Books', 'کتاب‌ها →') : tr('Door & mailbox →', '← در و صندوق نامه');
+  $('#shelfTitle').textContent = side ? tr('Door & mailbox', 'در و صندوق نامه') : tr('Repositories', 'ریپوها');
+  $('#shelfHint').textContent = side ? (isTouch ? tr('tap the door or the mailbox', 'روی در یا صندوق نامه بزن') : tr('click the door or the mailbox', 'روی در یا صندوق نامه کلیک کن')) : (isTouch ? tr('tap a book · swipe ← to turn', 'روی یک کتاب بزن · برای چرخیدن ← بکش') : tr('click a book · drag ← to turn', 'روی یک کتاب کلیک کن · برای چرخیدن ← بکش'));
 }
 let hintHidden = false;
 function hideHint() { if (hintHidden) return; hintHidden = true; setTimeout(() => { $('#hint').style.opacity = 0; }, 2500); }
@@ -4248,7 +4305,8 @@ function winPose(out) {
 }
 function winTgt() { return innerWidth > 760 ? WIN_TGT_D : WIN_TGT; }
 function winInfo() {
-  const hm = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const hm = new Date().toLocaleTimeString(LANG === 'fa' ? 'fa-IR' : [], { hour: '2-digit', minute: '2-digit' });
+  if (LANG === 'fa') { const w = { night: 'شب', sunrise: 'وقت طلوع', day: 'روز', sunset: 'وقت غروب' }[SKY.phase] || 'شب'; $('#winInfo').innerHTML = `بیرون <i>${w}</i> است، ساعتت ${hm} را نشان می‌دهد. روی شیشه بزن تا رعد و برق را صدا کنی.`; return; }
   const word = { night: 'night', sunrise: 'sunrise', day: 'daytime', sunset: 'sunset' }[SKY.phase] || 'night';
   $('#winInfo').innerHTML = `It's <i>${word}</i> outside, ${hm} on your clock. Tap the glass to call the thunder.`;
 }
@@ -4280,16 +4338,16 @@ function enterLibrary() {
   if (ZEN.on) endZen();
   view = 'library'; intro = null; catCam = null; ZEN.cam = null; controls.enabled = false;
   shelfTw = { t: 0, from: camera.position.clone(), fromT: controls.target.clone() };
-  $('#libHint').textContent = isTouch ? 'tap a book to open it' : 'hover a book for its name · click to open it';
+  $('#libHint').textContent = libHintText();
   $('#libUI').classList.add('on'); document.body.classList.add('libview'); tip.style.opacity = 0; tipFor = null; hideHint();
 }
+function libHintText() { return isTouch ? tr('tap a book to open it', 'روی یک کتاب بزن تا باز شود') : tr('hover a book for its name · click to open it', 'نشانگر را روی کتاب ببر تا اسمش را ببینی · کلیک کن تا باز شود'); }
 function leaveLibrary(keepCam) {
   if (view !== 'library') return;
   view = 'room'; $('#libUI').classList.remove('on'); document.body.classList.remove('libview'); hoverId = null; tip.style.opacity = 0; tipFor = null;
   if (!keepCam) { intro = { t: 0, from: camera.position.clone(), fromT: controls.target.clone(), dur: 1.4 }; controls.enabled = false; }
 }
 $('#libBack').onclick = () => leaveLibrary();
-$('#winHint').textContent = 'outside follows your clock';
 
 /* ---------- the other side: through the door onto the card, the letter slot, the letterbox ---------- */
 let doorTw = null, cardTw = null, postTw = null, outsideOn = false, pendingWrite = false, toastT = 0;
@@ -4516,11 +4574,11 @@ function syncMailbox() {
   mbox.flagWant = hasNew() ? 1 : 0; $('#dockMail').classList.toggle('on', mbox.flagWant > 0);
 }
 const elx = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
-const RTF = (() => { try { return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }); } catch (e) { return null; } })();
+const RTFs = {}, rtf = () => LANG in RTFs ? RTFs[LANG] : (RTFs[LANG] = (() => { try { return new Intl.RelativeTimeFormat(LANG === 'fa' ? 'fa' : 'en', { numeric: 'auto' }); } catch (e) { return null; } })());
 function ago(iso) {
-  const d = Date.parse(iso); if (!d || !RTF) return ''; const s = (d - Date.now()) / 1000;
+  const d = Date.parse(iso), RTF = rtf(); if (!d || !RTF) return ''; const s = (d - Date.now()) / 1000;
   for (const [u, k] of [['year', 31536000], ['month', 2592000], ['week', 604800], ['day', 86400], ['hour', 3600], ['minute', 60]]) if (Math.abs(s) >= k) return RTF.format(Math.round(s / k), u);
-  return 'just now';
+  return tr('just now', 'همین الان');
 }
 function avatarOf(l) {
   const a = elx('span', 'av', (l.from[0] || '?').toUpperCase());
@@ -4529,14 +4587,14 @@ function avatarOf(l) {
 }
 function letterItem(l, i) {
   const b = elx('button', 'lt'); b.type = 'button'; b.appendChild(avatarOf(l));
-  const tx = elx('span', 'tx'); tx.appendChild(elx('b', null, l.title)); tx.appendChild(elx('small', null, `@${l.from}${l.at ? ' · ' + ago(l.at) : ''}${l.reply ? ' · replied' : ''}`)); tx.appendChild(elx('em', null, l.text));
+  const tx = elx('span', 'tx'); tx.appendChild(elx('b', null, l.title)); tx.appendChild(elx('small', null, `@${l.from}${l.at ? ' · ' + ago(l.at) : ''}${l.reply ? tr(' · replied', ' · جواب داده شد') : ''}`)); tx.appendChild(elx('em', null, l.text));
   b.appendChild(tx); if (l.n > mailSeen) b.appendChild(elx('i', 'new'));
   b.onclick = () => readLetter(i); return b;
 }
-function olderButton() { const b = elx('button', 'btn more', 'Older letters ↓'); b.type = 'button'; b.id = 'mailMore'; b.onclick = loadOlder; return b; }
+function olderButton() { const b = elx('button', 'btn more', tr('Older letters ↓', 'نامه‌های قدیمی‌تر ↓')); b.type = 'button'; b.id = 'mailMore'; b.onclick = loadOlder; return b; }
 async function loadOlder() {   // the next page of letters, appended (the list keeps its scroll position)
   if (!MAIL.more || MAIL.busy || MAIL.demo) return;
-  const btn = $('#mailMore'); if (btn) { btn.textContent = 'Opening older letters…'; btn.disabled = true; }
+  const btn = $('#mailMore'); if (btn) { btn.textContent = tr('Opening older letters…', 'در حال باز کردن نامه‌های قدیمی‌تر…'); btn.disabled = true; }
   const from = MAIL.letters.length; await moreLetters(20);
   const list = $('#mailList'), old = $('#mailMore'); if (old) old.remove();
   for (let i = from; i < MAIL.letters.length; i++) list.appendChild(letterItem(MAIL.letters[i], i));
@@ -4545,12 +4603,12 @@ async function loadOlder() {   // the next page of letters, appended (the list k
 $('#mailList').addEventListener('scroll', e => { const L = e.currentTarget; if (L.scrollTop + L.clientHeight > L.scrollHeight - 180) loadOlder(); }, { passive: true });
 function renderMail() {
   const list = $('#mailList'), L = MAIL.letters, n = MAIL.total || L.length;
-  $('#mailCount').textContent = MAIL.state === 'loading' && !L.length ? 'checking…' : n ? `${n.toLocaleString('en')} letter${n > 1 ? 's' : ''}` : MAIL.state === 'error' ? 'offline' : 'empty';
+  $('#mailCount').textContent = MAIL.state === 'loading' && !L.length ? tr('checking…', 'در حال بررسی…') : n ? tr(`${num(n)} letter${n > 1 ? 's' : ''}`, `${num(n)} نامه`) : MAIL.state === 'error' ? tr('offline', 'آفلاین') : tr('empty', 'خالی');
   $('#mailAll').href = MAIL_URL.all; list.textContent = '';
-  if (MAIL.demo) list.appendChild(elx('div', 'mnote', 'Preview: sample letters. On the real site the letters arrive from GitHub.'));
+  if (MAIL.demo) list.appendChild(elx('div', 'mnote', tr('Preview: sample letters. On the real site the letters arrive from GitHub.', 'پیش‌نمایش: نامه‌های نمونه. در سایت اصلی نامه‌ها از GitHub می‌آیند.')));
   if (!L.length) {
-    const box = elx('div', 'mempty'); box.appendChild(elx('b', null, MAIL.state === 'loading' || MAIL.state === 'idle' ? 'Checking the mailbox…' : MAIL.state === 'error' ? 'Could not reach the mailbox' : 'No letters yet'));
-    if (MAIL.state === 'ok' || MAIL.state === 'error') box.appendChild(document.createTextNode('Step outside through the door and drop one in the slot. It lands right here.'));
+    const box = elx('div', 'mempty'); box.appendChild(elx('b', null, MAIL.state === 'loading' || MAIL.state === 'idle' ? tr('Checking the mailbox…', 'در حال سر زدن به صندوق نامه…') : MAIL.state === 'error' ? tr('Could not reach the mailbox', 'به صندوق نامه نرسیدیم') : tr('No letters yet', 'هنوز نامه‌ای نیامده')));
+    if (MAIL.state === 'ok' || MAIL.state === 'error') box.appendChild(document.createTextNode(tr('Step outside through the door and drop one in the slot. It lands right here.', 'از در برو بیرون و یکی در شکاف نامه بینداز. درست همین‌جا می‌نشیند.')));
     list.appendChild(box); return;
   }
   L.forEach((l, i) => list.appendChild(letterItem(l, i)));
@@ -4559,13 +4617,13 @@ function renderMail() {
 function showMailList() { $('#mailRead').hidden = true; $('#mailList').hidden = false; }
 function readLetter(i) {
   const l = MAIL.letters[i]; if (!l) return; const r = $('#mailRead'); r.textContent = '';
-  const back = elx('button', 'btn', '← All letters'); back.type = 'button'; back.style.alignSelf = 'flex-start'; back.onclick = () => { showMailList(); renderMail(); }; r.appendChild(back);
+  const back = elx('button', 'btn', tr('← All letters', '→ همه‌ی نامه‌ها')); back.type = 'button'; back.style.alignSelf = 'flex-start'; back.onclick = () => { showMailList(); renderMail(); }; r.appendChild(back);
   const p = elx('article', 'paper'); p.appendChild(elx('h4', null, l.title));
-  const meta = elx('div', 'meta'); meta.appendChild(avatarOf(l)); meta.appendChild(elx('span', null, `from @${l.from}${l.at && Date.parse(l.at) ? ' · ' + new Date(l.at).toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric' }) : ''}`)); p.appendChild(meta);
+  const meta = elx('div', 'meta'); meta.appendChild(avatarOf(l)); meta.appendChild(elx('span', null, `${tr('from', 'از')} @${l.from}${l.at && Date.parse(l.at) ? ' · ' + new Date(l.at).toLocaleDateString(LANG === 'fa' ? 'fa-IR' : 'en', { year: 'numeric', month: 'short', day: 'numeric' }) : ''}`)); p.appendChild(meta);
   p.appendChild(elx('div', 'txt', l.text + (l.sign ? '\n\n- ' + l.sign : '')));
-  if (l.reply) { const rp = elx('div', 'rep'); rp.appendChild(elx('b', null, 'Sina replied')); rp.appendChild(document.createTextNode(l.reply)); p.appendChild(rp); }
+  if (l.reply) { const rp = elx('div', 'rep'); rp.appendChild(elx('b', null, tr('Sina replied', 'جواب سینا'))); rp.appendChild(document.createTextNode(l.reply)); p.appendChild(rp); }
   r.appendChild(p);
-  if (l.url) { const a = elx('a', 'btn', 'Open on GitHub ↗'); a.href = l.url; a.target = '_blank'; a.rel = 'noopener'; a.style.alignSelf = 'flex-start'; r.appendChild(a); }
+  if (l.url) { const a = elx('a', 'btn', tr('Open on GitHub ↗', 'باز کردن در GitHub ↗')); a.href = l.url; a.target = '_blank'; a.rel = 'noopener'; a.style.alignSelf = 'flex-start'; r.appendChild(a); }
   $('#mailList').hidden = true; r.hidden = false; r.scrollTop = 0;
 }
 
@@ -4617,9 +4675,9 @@ function openCardLink(id) {
     if (navigator.share) navigator.share({ title: 'Sina Ebadi · sewyed', url }).catch(e => { if (!e || e.name !== 'AbortError') copy(); }); else copy();
     return;
   }
-  if (L.url.startsWith('mailto:')) { finish(L.url, L.label); return; }
+  if (L.url.startsWith('mailto:')) { finish(L.url, loc(id, L).label); return; }
   let w = null; try { w = window.open(L.url, '_blank'); } catch (e) {}
-  if (w) { try { w.opener = null; } catch (e) {} } else finish(L.url, L.label);
+  if (w) { try { w.opener = null; } catch (e) {} } else finish(L.url, loc(id, L).label);
 }
 function saveContact() {
   const v = ['BEGIN:VCARD', 'VERSION:3.0', 'N:Ebadi;Sina;;;', 'FN:Sina Ebadi', 'NICKNAME:sewyed', 'TITLE:Back-End Developer', `EMAIL;TYPE=INTERNET:${EMAIL}`,
@@ -4639,22 +4697,52 @@ $('#mailWrite').onclick = () => { leaveMail(true); enterCard(true); };
 $('#mailAll').href = MAIL_URL.all;
 
 // the desk bot: tap it and it explains the room (but keeps the plasma ball's secret)
-const BOT_LINES = () => [
-  isTouch ? "Hi! I'm the desk bot. Drag to look around, pinch to zoom." : "Hi! I'm the desk bot. Drag to look around, scroll to zoom. W A S D moves you, R resets the view.",
-  `${isTouch ? 'Tap' : 'Click'} things to play with them: the screens, the books, the notebook, the coffee, the crystals, the record player, the cat, the candles, the lamps, the window.`,
-  "The door on the right leads outside, onto Sina's card. Drop a letter in its slot; the mailbox in here keeps them.",
-  'Stay a while. After 30 minutes the room goes quiet, and everything alive in here starts to glow.',
-  'At 40 minutes, currents of energy start flowing through them, and between them. Any touch brings the room back.',
-];
+const BOT_LINES = () => {
+  const T = isTouch, tap = T ? tr('Tap', 'بزن') : tr('Click', 'کلیک کن');
+  return [
+    T ? tr("Hi! I'm the desk bot. Drag to look around, pinch to zoom, and ⟲ brings the view back.", 'سلام! من ربات میزم. انگشتت را بکش تا دور و بر را ببینی، با دو انگشت زوم کن، و ⟲ نما را برمی‌گرداند.')
+      : tr("Hi! I'm the desk bot. Drag to look around, scroll to zoom. W A S D moves you, R resets the view, and the number keys open the bar at the bottom.", 'سلام! من ربات میزم. بکش تا دور و بر را ببینی و با اسکرول زوم کن. با W A S D جابه‌جا شو، R نما را برمی‌گرداند و کلیدهای عددی دکمه‌های نوار پایین را باز می‌کنند.'),
+    tr(`${tap} things to play with them. The screens are links: GitHub, VS Code, Ubuntu and Telegram. The mug buys me a coffee, the notebook writes me an email.`,
+       `روی چیزها ${tap} تا باهاشان بازی کنی. صفحه‌ها لینک‌اند: GitHub، VS Code، اوبونتو و تلگرام. ماگ یعنی یک قهوه مهمانم کن، و دفترچه برایم ایمیل می‌نویسد.`),
+    tr("The little books by the desk are my repos: Sina walks over and pulls one out. The big bookcase holds GitHub's best-known repositories.",
+       'کتاب‌های کوچک کنار میز ریپوهای خودم هستند: سینا می‌رود و یکی را بیرون می‌کشد. قفسه‌ی بزرگ هم معروف‌ترین ریپوهای GitHub را دارد.'),
+    tr('The crystals open the shop on Telegram; hold them for 3 seconds for Instagram. The record player plays lo-fi, and the record cabinet opens up for a closer look.',
+       'کریستال‌ها فروشگاه تلگرام را باز می‌کنند؛ ۳ ثانیه نگهشان داری، اینستاگرام باز می‌شود. گرامافون لوفای پخش می‌کند و کمد صفحه‌ها را هم می‌شود از نزدیک دید.'),
+    tr(`${tap} the guitar by the window and Sina gets up to play it; ${tap.toLowerCase()} the headphones and he puts them on.`,
+       'روی گیتار کنار پنجره بزنی، سینا بلند می‌شود و می‌زند؛ روی هدفون بزنی، می‌گذاردش روی گوشش.'),
+    tr('Behind him is the kitchen: he makes an espresso at the machine, or pours a glass of tea from the kettle on the stove. The fridge opens, and its lamp switches on and off.',
+       'پشت سرش آشپزخانه است: با اسپرسوساز قهوه درست می‌کند، یا از کتری روی گاز یک استکان چای می‌ریزد. یخچال باز می‌شود و چراغش هم روشن و خاموش.'),
+    tr('The window shows outside at your own time of day; tap the glass for thunder. The curtains close, and the lamps and candles switch on and off.',
+       'پنجره بیرون را به وقت ساعت خودت نشان می‌دهد؛ روی شیشه بزن تا رعد بزند. پرده‌ها بسته می‌شوند و چراغ‌ها و شمع‌ها روشن و خاموش.'),
+    tr('The cat on the shelf is asleep. Wake her if you dare. And the rose under the glass… listen closely.',
+       'گربه‌ی روی طاقچه خواب است؛ اگر جرئت داری بیدارش کن. و گل رز زیر شیشه… خوب گوش کن.'),
+    tr("The door on the right leads outside, onto Sina's card. Drop a letter in its slot; the mailbox in here keeps them.",
+       'در سمت راست به بیرون باز می‌شود، روی کارت سینا. در شکافش نامه بینداز؛ صندوق نامه همین‌جا نگهشان می‌دارد.'),
+    tr('Stay a while. After 30 minutes the room goes quiet, and everything alive in here starts to glow.',
+       'کمی بمان. بعد از ۳۰ دقیقه اتاق آرام می‌شود و هر چیز زنده‌ای این‌جا شروع می‌کند به درخشیدن.'),
+    tr('At 40 minutes, currents of energy start flowing through them, and between them. Any touch brings the room back.',
+       'در دقیقه‌ی ۴۰، جریان‌های انرژی در آن‌ها و میانشان راه می‌افتد. با هر لمسی اتاق برمی‌گردد.'),
+    tr('And the فا button up top switches me (and everything else) to Farsi.', 'و دکمه‌ی EN بالای صفحه همه‌چیز، من را هم، به انگلیسی برمی‌گرداند.'),
+  ];
+};
 const botTalk = { on: false, i: 0, text: '', chars: 0, done: false, wait: 0, w: 0, h: 0 }, _bp = new V3(), _bq = new V3();
 function botSay(i) {
   const L = BOT_LINES(); if (i >= L.length) { botHush(); return; }
   Object.assign(botTalk, { on: true, i, text: L[i], chars: 0, done: false });
-  $('#botText').textContent = ''; $('#botN').textContent = `${i + 1} / ${L.length}`; $('#botSay').classList.add('on'); tip.style.opacity = 0; tipFor = null;
+  $('#botText').textContent = ''; $('#botN').textContent = `${num(i + 1)} / ${num(L.length)}`; $('#botSay').classList.add('on'); tip.style.opacity = 0; tipFor = null;
   const b = $('#botSay'); b.style.width = b.style.height = ''; $('#botText').textContent = L[i];   // measure the full line once, then hold that size while it types
   botTalk.w = b.offsetWidth; botTalk.h = b.offsetHeight; b.style.width = botTalk.w + 'px'; b.style.height = botTalk.h + 'px'; $('#botText').textContent = '';
 }
 function botHush() { botTalk.on = false; $('#botSay').classList.remove('on'); }
+function setLang(l) {   // everything on screen that is not a repo, a library book or a letter's own words
+  LANG = Boot.lang = l;
+  Boot.applyStatic(); syncHints(); syncShelfSide();
+  if (view === 'window') winInfo(); if (view === 'library') $('#libHint').textContent = libHintText();
+  if (view === 'mail') { if ($('#mailRead').hidden) renderMail(); else { showMailList(); renderMail(); } }
+  tip.style.opacity = 0; tipFor = null; needHover = true;
+  if (botTalk.on) botSay(botTalk.i);
+}
+$('#btnLang').onclick = () => setLang(LANG === 'fa' ? 'en' : 'fa');
 $('#botSay').addEventListener('click', () => { if (!botTalk.done) botTalk.chars = botTalk.text.length; else botSay(botTalk.i + 1); });
 function updateBot(t, dt, bounce) {
   const talking = botTalk.on && !botTalk.done;
@@ -4815,21 +4903,21 @@ function activate(id, point) {
 }
 function finish(url, label) {
   if (window.__noNav) return;
-  const a = $('#goLink'), mail = url.startsWith('mailto:');
-  $('#goMail').hidden = !mail; $('#goCopy').textContent = 'Copy address'; $('#goBack').textContent = view === 'card' ? '← back to the card' : '← back to the room';
+  const a = $('#goLink'), mail = url.startsWith('mailto:'), tr = (e, f) => view === 'card' ? e : trL(e, f);   // from the card (outside) it stays English
+  $('#goMail').hidden = !mail; $('#goCopy').textContent = tr('Copy address', 'کپی آدرس'); $('#goBack').textContent = view === 'card' ? '← back to the card' : tr('← back to the room', '→ برگشت به اتاق');
   if (mail) {   // the page stays: show the address too, since some viewers cannot open mail links
-    a.href = url; a.removeAttribute('target'); a.textContent = 'Write me an email ✉'; $('#go').classList.add('on');
+    a.href = url; a.removeAttribute('target'); a.textContent = tr('Write me an email ✉', 'برایم ایمیل بنویس ✉'); $('#go').classList.add('on');
     if (!inFrame) location.href = url;
     return;
   }
   a.setAttribute('target', '_blank');
-  if (inFrame) { a.href = url; a.textContent = `Open ${label} ↗`; $('#go').classList.add('on'); }
+  if (inFrame) { a.href = url; a.textContent = tr(`Open ${label} ↗`, `باز کردن ${label} ↗`); $('#go').classList.add('on'); }
   else location.href = url;
 }
 $('#goCopy').onclick = async () => {
   const b = $('#goCopy');
-  try { await navigator.clipboard.writeText(EMAIL); b.textContent = 'Copied ✓'; }
-  catch (e) { const r = document.createRange(); r.selectNodeContents($('#goMail .addr')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); b.textContent = 'Selected - copy it'; }
+  try { await navigator.clipboard.writeText(EMAIL); b.textContent = view === 'card' ? 'Copied ✓' : tr('Copied ✓', 'کپی شد ✓'); }
+  catch (e) { const r = document.createRange(); r.selectNodeContents($('#goMail .addr')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); b.textContent = view === 'card' ? 'Selected - copy it' : tr('Selected - copy it', 'انتخاب شد، کپی‌اش کن'); }
 };
 function resetSeq() {
   seq = null; portalPass.enabled = false; portalPass.uniforms.uP.value = 0; $('#go').classList.remove('on');
@@ -5896,8 +5984,9 @@ function frame() {
     if (view === 'shelf' && id && !id.startsWith('repo:')) id = null;
     if (view === 'library' && id && !id.startsWith('lib:')) id = null;
     if (id !== hoverId && !(view === 'shelf' && !id && hoverId && document.querySelector('#chips button.hot:hover'))) { hoverId = id; syncChips(); }
-    canvas.style.cursor = id ? 'pointer' : '';
-    if (id) showTip(id, (ndc.x + 1) / 2 * innerWidth, (1 - ndc.y) / 2 * innerHeight); else { tip.style.opacity = 0; tipFor = null; }
+    const shown = id && id !== 'plasma';   // the plasma ball is a secret: no tip, no pointer (it still answers a touch)
+    canvas.style.cursor = shown ? 'pointer' : '';
+    if (shown) showTip(id, (ndc.x + 1) / 2 * innerWidth, (1 - ndc.y) / 2 * innerHeight); else { tip.style.opacity = 0; tipFor = null; }
   }
   if (pointerActive && view === 'room') updatePointerWorld();
   if (lastPointerType !== 'mouse' && t - lastPointerMove > 3) pointerActive = false;
@@ -6096,7 +6185,7 @@ function frame() {
   if (sq && sq.portalStart != null) {
     const pt = clamp((sq.t - sq.portalStart) / 2.2, 0, 1), p = 0.16 * smooth(0, 0.28, pt) + 0.84 * Math.pow(smooth(0.28, 1, pt), 2.1);
     portalPass.enabled = p > 0; portalPass.uniforms.uP.value = p; portalPass.uniforms.uT.value = t;
-    if (!sq.done && pt >= 1) { sq.done = true; finish(LINKS[sq.id].url, LINKS[sq.id].label); }
+    if (!sq.done && pt >= 1) { sq.done = true; finish(LINKS[sq.id].url, loc(sq.id, LINKS[sq.id]).label); }
   }
   if (sparkT >= 0 && sparkT < 1.2) {
     sparkT += dt; const pos = sparkGeo.attributes.position;
